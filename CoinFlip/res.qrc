@@ -1,0 +1,26 @@
+<RCC>
+    <qresource prefix="/">
+        <file>img/background.jpg</file>
+        <file>img/coin.png</file>
+        <file>img/success.png</file>
+        <file>img/title.png</file>
+        <file>img/start.png</file>
+        <file>img/coinflip3.gif</file>
+        <file>img/back1.png</file>
+        <file>img/back2.png</file>
+        <file>img/level.png</file>
+        <file>img/coinbackground.png</file>
+        <file>img/Coin0001.png</file>
+        <file>img/Coin0002.png</file>
+        <file>img/Coin0003.png</file>
+        <file>img/Coin0004.png</file>
+        <file>img/Coin0005.png</file>
+        <file>img/Coin0006.png</file>
+        <file>img/Coin0007.png</file>
+        <file>img/Coin0008.png</file>
+        <file>img/BackButtonSound.wav</file>
+        <file>img/ConFlipSound.wav</file>
+        <file>img/LevelWinSound.wav</file>
+        <file>img/TapButtonSound.wav</file>
+    </qresource>
+</RCC>
