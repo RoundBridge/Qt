@@ -6,6 +6,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 }
+
 const int error_len = 1024;
 
 class XFFmpeg
@@ -26,11 +27,15 @@ public:
 		return &f_obj;
 	}
 	virtual ~XFFmpeg();
-	bool open(const char* path);
+	int open(const char* path);
 	void close();
 	std::string get_error(int error_num);
-	int total_ms = 0;	// 文件总时长，毫秒为单位
+	int get_duration_ms();
+	
 protected:
+	void compute_duration_ms();  // 计算文件总共的播放时长，以毫秒为单位
+	XFFmpeg();	// 外部不能生成对象了，外部定义对象会失败
+
 	char error_buf[error_len];
 	QMutex mutex;
 	//解封装上下文 
@@ -39,7 +44,6 @@ protected:
 	//如果用户释放ffmpeg申请的空间会有问题，因为ffmpeg是
 	//在动态库里申请的，用户不一定能delete掉
 	AVFormatContext* ic = NULL;  // C++11类中可以直接对成员变量赋值
-	XFFmpeg();	// 外部不能生成对象了，外部定义对象会失败
-
+	int total_ms = 0;	// 文件总时长，毫秒为单位
 };
 
