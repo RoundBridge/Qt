@@ -6,6 +6,7 @@ using std::endl;
 #pragma comment(lib, "avcodec.lib")
 #pragma comment(lib, "avformat.lib")
 #pragma comment(lib, "avutil.lib")
+#pragma comment(lib, "swscale.lib")
 
 int XFFmpeg::open(const char* path) {	
 	//先关闭现有的资源
@@ -87,6 +88,63 @@ AVFrame* XFFmpeg::decode(const AVPacket* pkt) {
 	}
 	mutex.unlock();
 	return yuv;
+}
+
+bool XFFmpeg::video_convert(const AVFrame* frame, uint8_t* const out, int out_w, int out_h, AVPixelFormat out_pixfmt) {
+	int re = 0;
+	uint8_t* data[AV_NUM_DATA_POINTERS] = { 0 };
+	int lines[AV_NUM_DATA_POINTERS] = { 0 };
+
+	if (out_pixfmt == AV_PIX_FMT_ARGB
+		|| out_pixfmt == AV_PIX_FMT_RGBA
+		|| out_pixfmt == AV_PIX_FMT_ABGR
+		|| out_pixfmt == AV_PIX_FMT_BGRA) {
+		data[0] = out;
+		lines[0] = out_w * 4;
+	}
+	else if (out_pixfmt == AV_PIX_FMT_YUV422P) {
+		data[0] = out;
+		data[1] = data[0] + out_w * out_h;
+		data[2] = data[1] + out_w * out_h / 2;
+		lines[0] = out_w;
+		lines[1] = out_w / 2;
+		lines[2] = out_w / 2;
+	}
+
+	mutex.lock();
+	vSwsCtx = sws_getCachedContext(
+		/*
+		* If context is NULL, just calls sws_getContext() to get a new
+		* context.Otherwise, checks if the parameters are the ones already
+		* saved in context.If that is the case, returns the current
+		* context.Otherwise, frees context and gets a new context with
+		* the new parameters.
+		*/
+		vSwsCtx,  //传NULL会新创建，否则比较该上下文和下面这些参数将要创建出来的上下文是否一致，若一致则直接返回该上下文，不一致则创建新的上下文
+		frame->width, frame->height,	//输入的宽高
+		(AVPixelFormat)frame->format,	//输入的格式，YUV420p
+		out_w, out_h,					//输出的宽高
+		out_pixfmt,						//输出格式
+		SWS_BILINEAR,					//尺寸转换的算法
+		0, 0, 0
+	);
+	if (vSwsCtx) {
+		// sws_scale函数的开销很大
+		re = sws_scale(			//返回值 the height of the output slice
+			vSwsCtx,
+			frame->data,		//输入数据地址
+			frame->linesize,	//输入行跨度
+			0,					//the position in the source image of the slice to *process, 
+								//that is the number(counted starting from
+								// zero) in the image of the first row of the slice
+			frame->height,		//输入高度
+			data,				//输出数据地址
+			lines				//输出行跨度
+		);
+		cout << "[CONVERT] the height of the output is: " << re << endl;
+	}
+	mutex.unlock();
+	return true;
 }
 
 void XFFmpeg::compute_duration_ms() {
@@ -195,6 +253,10 @@ void XFFmpeg::close() {
 	if (ic) avformat_close_input(&ic);
 	if (vc)avcodec_free_context(&vc);
 	if (ac)avcodec_free_context(&ac);
+	if (vSwsCtx) { 
+		sws_freeContext(vSwsCtx); 
+		vSwsCtx = NULL;
+	}
 	if (packet) av_packet_free(&packet);
 	if (yuv) av_frame_free(&yuv);
 	mutex.unlock();

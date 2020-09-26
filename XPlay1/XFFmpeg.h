@@ -5,6 +5,7 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
+#include <libswscale/swscale.h>
 }
 
 const int error_len = 1024;
@@ -30,15 +31,17 @@ public:
 	int open(const char* path);
 	AVPacket* read();
 	AVFrame *decode(const AVPacket* pkt);
+	bool video_convert(const AVFrame *frame, uint8_t* const out, int out_w, int out_h, AVPixelFormat out_pixfmt);
 	void close();
 	std::string get_error(int error_num);
 	int get_duration_ms();
-	
+	int videoStream = 0;
+	int audioStream = 0;
+
 protected:
 	void compute_duration_ms();  // 计算文件总共的播放时长，以毫秒为单位
-	bool create_decoder(AVFormatContext* ic);  // 打开解码器（内部用）
+	bool create_decoder(AVFormatContext* ic);  // 创建解码器，用于解码（内部用）
 	XFFmpeg();	// 外部不能生成对象了，外部定义对象会失败
-
 	char error_buf[error_len];
 	QMutex mutex;
 	//解封装上下文 
@@ -48,11 +51,10 @@ protected:
 	//在动态库里申请的，用户不一定能delete掉
 	AVFormatContext* ic = NULL;  // C++11类中可以直接对成员变量赋值
 	AVCodecContext* ac = NULL;  // 音频解码器上下文
-	AVCodecContext* vc = NULL;  // 视频解码器上下文
+	AVCodecContext* vc = NULL;  // 视频解码器上下文		
+	SwsContext* vSwsCtx = NULL;  // 视频像素尺寸及格式转换上下文
 	AVPacket *packet = NULL;
 	AVFrame *yuv = NULL;
-	int videoStream = 0;
-	int audioStream = 0;
 	int total_ms = 0;	// 文件总时长，毫秒为单位
 };
 
