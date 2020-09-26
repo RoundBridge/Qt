@@ -31,6 +31,26 @@ int XFFmpeg::open(const char* path) {
 
 	return re;
 }
+
+AVPacket XFFmpeg::read() {
+	AVPacket pkt;
+	int re = 0;
+
+	mutex.lock();
+	memset((void *)&pkt, 0, sizeof(AVPacket));
+	if (!ic) {
+		mutex.unlock();
+		cout << "Please open first!" << endl;
+		return pkt;
+	}	
+	re = av_read_frame(ic, &pkt);
+	if (0 != re) {
+		cout << "read frame error: " << get_error(re) << endl;
+	}
+	mutex.unlock();
+	return pkt;
+}
+
 void XFFmpeg::compute_duration_ms() {
 	if (ic) {
 		total_ms = ic->duration / (AV_TIME_BASE / 1000);

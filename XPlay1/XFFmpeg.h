@@ -28,6 +28,7 @@ public:
 	}
 	virtual ~XFFmpeg();
 	int open(const char* path);
+	AVPacket read();
 	void close();
 	std::string get_error(int error_num);
 	int get_duration_ms();
