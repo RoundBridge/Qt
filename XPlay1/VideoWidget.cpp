@@ -3,6 +3,7 @@
 #include "XFFmpeg.h"
 #include <iostream>
 #include "stdio.h"
+#include "XVideoThread.h"
 
 using std::cout;
 using std::endl;
@@ -29,11 +30,13 @@ VideoWidget::VideoWidget(QWidget* p) :QOpenGLWidget(p) {
 		return;
 	}
 
-	startTimer(40);  // 开启20毫秒定时器
+	startTimer(30);  // 开启20毫秒定时器
+	XVideoThread::get()->start();
 }
 
 void VideoWidget::paintEvent(QPaintEvent* e) {	// 重载窗口绘制事件函数	
 	QPainter painter;
+/*
 	AVPacket *pkt = NULL;
 	AVFrame* yuv = NULL;
 	// 读取视频流里面的包
@@ -52,8 +55,8 @@ void VideoWidget::paintEvent(QPaintEvent* e) {	// 重载窗口绘制事件函数
 	if (yuv == NULL) {
 		return;
 	}
-
-	XFFmpeg::get()->video_convert(yuv, image->bits(), width(), height(), AV_PIX_FMT_BGRA);
+*/
+	XFFmpeg::get()->video_convert(image->bits(), width(), height(), AV_PIX_FMT_BGRA);
 	// 调试用（保存解码出来的第100帧，看数据是否正确）
 	if (count == 100) {
 		//fp = fopen("argb.data", "wb");
@@ -71,7 +74,9 @@ void VideoWidget::paintEvent(QPaintEvent* e) {	// 重载窗口绘制事件函数
 }
 
 void VideoWidget::timerEvent(QTimerEvent* e) {		// 重载定时器事件函数（界面刷新通过定时器进行）
-	this->update();
+	//this->update();
+	//cout << "time out" << endl;
+	this->repaint();
 }
 
 VideoWidget:: ~VideoWidget() {

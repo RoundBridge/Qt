@@ -1,4 +1,5 @@
 #include "XFFmpeg.h"
+#include "XVideoThread.h"
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -25,9 +26,10 @@ int XFFmpeg::open(const char* path) {
 		&opts  //参数设置，比如rtsp的延时时间，传NULL表示默认设置
 	);
 	// 打开成功的情况下，把关于这个文件的相关信息都更新好，便于外部使用
-	if (0 == re) {
+	if (0 == re) {		
+		re = create_decoder(ic);		
 		compute_duration_ms();
-		re = create_decoder(ic);
+		compute_video_fps();
 	}
 	mutex.unlock();
 
@@ -50,6 +52,9 @@ AVPacket* XFFmpeg::read() {
 	if (0 != re) {
 		mutex.unlock();
 		cout << "[PACKET] read frame error(" << re << "): " << get_error(re) << endl;
+		if (re == -541478725) {  // -541478725返回值是测试出来的表示读到文件末尾
+			XVideoThread::isExit = true;
+		}
 		return NULL;
 	}
 	mutex.unlock();
@@ -90,10 +95,17 @@ AVFrame* XFFmpeg::decode(const AVPacket* pkt) {
 	return yuv;
 }
 
-bool XFFmpeg::video_convert(const AVFrame* frame, uint8_t* const out, int out_w, int out_h, AVPixelFormat out_pixfmt) {
+bool XFFmpeg::video_convert(uint8_t* const out, int out_w, int out_h, AVPixelFormat out_pixfmt) {
 	int re = 0;
 	uint8_t* data[AV_NUM_DATA_POINTERS] = { 0 };
 	int lines[AV_NUM_DATA_POINTERS] = { 0 };
+	const AVFrame* frame = yuv;
+
+	if (yuv == NULL ||
+		yuv->width == 0 ||
+		yuv->height == 0) {
+		return false;
+	}
 
 	if (out_pixfmt == AV_PIX_FMT_ARGB
 		|| out_pixfmt == AV_PIX_FMT_RGBA
@@ -160,6 +172,20 @@ void XFFmpeg::compute_duration_ms() {
 		total_ms = 0;
 	}
 	return;
+}
+
+void XFFmpeg::compute_video_fps() {
+	if (ic) {
+		if (ic->streams[videoStream]->avg_frame_rate.den == 0) {
+			fps = 0; 
+		}
+		else {
+			fps = ic->streams[videoStream]->avg_frame_rate.num / ic->streams[videoStream]->avg_frame_rate.den;
+		}
+	}
+	else {
+		fps = 0;
+	}
 }
 
 bool XFFmpeg::create_decoder(AVFormatContext* ic) {
@@ -251,6 +277,10 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 
 int XFFmpeg::get_duration_ms() {
 	return total_ms;
+}
+
+int XFFmpeg::get_video_fps() {
+	return fps;
 }
 
 void XFFmpeg::close() {
