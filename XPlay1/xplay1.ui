@@ -1,25 +1,78 @@
-<UI version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>XPlay1Class</class>
- <widget class="QWidget" name="XPlay1Class" >
-  <property name="objectName" >
-   <string notr="true">XPlay1Class</string>
-  </property>
-  <property name="geometry" >
+ <widget class="QWidget" name="XPlay1Class">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>600</width>
-    <height>400</height>
+    <width>679</width>
+    <height>519</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>XPlay1</string>
-  </property>$centralwidget$
+  </property>
+  <property name="windowIcon">
+   <iconset resource="xplay1.qrc">
+    <normaloff>:/XPlay1/res/logo.ico</normaloff>:/XPlay1/res/logo.ico</iconset>
+  </property>
+  <widget class="VideoWidget" name="openGLWidget">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>600</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="open">
+   <property name="geometry">
+    <rect>
+     <x>250</x>
+     <y>400</y>
+     <width>61</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QPushButton:!hover{border-image: url(:/XPlay1/res/open.png);}
+QPushButton:hover{border-image: url(:/XPlay1/res/open_hot.png);}</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="play">
+   <property name="geometry">
+    <rect>
+     <x>350</x>
+     <y>405</y>
+     <width>51</width>
+     <height>45</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QPushButton:!hover{border-image: url(:/XPlay1/res/play.png);}
+QPushButton:hover{border-image: url(:/XPlay1/res/play_hot.png);}
+</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
  </widget>
- <layoutDefault spacing="6" margin="11" />
- <pixmapfunction></pixmapfunction>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>VideoWidget</class>
+   <extends>QOpenGLWidget</extends>
+   <header>videowidget.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
-   <include location="xplay1.qrc"/>
+  <include location="xplay1.qrc"/>
  </resources>
  <connections/>
-</UI>
+</ui>

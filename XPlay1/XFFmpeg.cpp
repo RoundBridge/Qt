@@ -49,7 +49,7 @@ AVPacket* XFFmpeg::read() {
 	re = av_read_frame(ic, packet);
 	if (0 != re) {
 		mutex.unlock();
-		cout << "[PACKET] read frame error: " << get_error(re) << endl;
+		cout << "[PACKET] read frame error(" << re << "): " << get_error(re) << endl;
 		return NULL;
 	}
 	mutex.unlock();
@@ -101,6 +101,11 @@ bool XFFmpeg::video_convert(const AVFrame* frame, uint8_t* const out, int out_w,
 		|| out_pixfmt == AV_PIX_FMT_BGRA) {
 		data[0] = out;
 		lines[0] = out_w * 4;
+	}
+	else if (out_pixfmt == AV_PIX_FMT_RGB24
+		|| out_pixfmt == AV_PIX_FMT_BGR24) {
+		data[0] = out;
+		lines[0] = out_w * 3;
 	}
 	else if (out_pixfmt == AV_PIX_FMT_YUV422P) {
 		data[0] = out;

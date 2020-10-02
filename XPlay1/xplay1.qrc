@@ -1,4 +1,14 @@
 <RCC>
-    <qresource prefix="XPlay1">
-    </qresource>
+  <qresource prefix="XPlay1">
+    <file>res/logo.ico</file>
+    <file>res/open.png</file>
+    <file>res/open_hot.png</file>
+    <file>res/pause.png</file>
+    <file>res/pause_hot.png</file>
+    <file>res/play.png</file>
+    <file>res/play_hot.png</file>
+    <file>res/play.png</file>
+    <file>res/play_hot.png</file>
+    <file>res/open.png</file>
+  </qresource>
 </RCC>
