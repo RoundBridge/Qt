@@ -113,6 +113,22 @@ color: rgb(255, 255, 255);</string>
     <string>/</string>
    </property>
   </widget>
+  <widget class="QSlider" name="progressSlider">
+   <property name="geometry">
+    <rect>
+     <x>50</x>
+     <y>510</y>
+     <width>691</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <property name="maximum">
+    <number>999</number>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
+   </property>
+  </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>

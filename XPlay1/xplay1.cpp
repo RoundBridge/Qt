@@ -9,6 +9,7 @@ XPlay1::XPlay1(QWidget *parent)
     : QWidget(parent)
 {
     ui.setupUi(this);
+    startTimer(40);  // 40毫秒刷新一次当前播放时间
 }
 
 void XPlay1::open() {
@@ -33,9 +34,7 @@ void XPlay1::open() {
 
     XVideoThread::isStart = true;
     XVideoThread::isExit = false;
-
-    XVideoThread::get()->start();
-    startTimer(40);  // 40毫秒刷新一次当前播放时间
+    XVideoThread::get()->start();    
     return;
 }
 
@@ -45,4 +44,11 @@ void XPlay1::timerEvent(QTimerEvent* e) {
     char buf[24] = { 0 };
     sprintf(buf, "%03d:%02d", min, sec);
     ui.playTime->setText(buf);
+
+    if (XFFmpeg::get()->get_duration_ms() > 0) {
+        ui.progressSlider->setValue(XFFmpeg::get()->get_current_video_pts() * 999 / XFFmpeg::get()->get_duration_ms());
+    }
+    else {
+        ui.progressSlider->setValue(0);
+    }
 }
