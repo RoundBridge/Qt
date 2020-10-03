@@ -7,7 +7,7 @@
 
 using std::cout;
 using std::endl;
-
+// 调试时保存解码出来的图片用
 int count = 0;
 FILE* fp = NULL;
 
@@ -36,26 +36,11 @@ VideoWidget::VideoWidget(QWidget* p) :QOpenGLWidget(p) {
 
 void VideoWidget::paintEvent(QPaintEvent* e) {	// 重载窗口绘制事件函数	
 	QPainter painter;
-/*
-	AVPacket *pkt = NULL;
-	AVFrame* yuv = NULL;
-	// 读取视频流里面的包
-	pkt = XFFmpeg::get()->read();
-	if (pkt == NULL) {
-		cout << "A NULL PTR returned from read()" << endl;
+
+	if (XVideoThread::isExit) {
 		return;
 	}
 
-	if (pkt->stream_index != XFFmpeg::get()->videoStream) {
-		return;
-	}
-	// 对读取到的包进行解码
-	yuv = XFFmpeg::get()->decode(pkt);
-	av_packet_unref(pkt);
-	if (yuv == NULL) {
-		return;
-	}
-*/
 	XFFmpeg::get()->video_convert(image->bits(), width(), height(), AV_PIX_FMT_BGRA);
 	// 调试用（保存解码出来的第100帧，看数据是否正确）
 	if (count == 100) {

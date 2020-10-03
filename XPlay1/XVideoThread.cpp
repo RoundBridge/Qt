@@ -19,6 +19,10 @@ void XVideoThread::run() {  // ÖØÐ´QTÏß³Ìº¯Êý(ÔÚµ÷ÓÃstartÖ®ºó»áÔÚÏß³ÌÖÐÔËÐÐÕâ¸öº
 		if (XFFmpeg::get()->get_video_fps() > 0) {
 			msleep(1000 / XFFmpeg::get()->get_video_fps());
 		}
+		//¶ÔÓÚ½âÂë³öÀ´µÄAVFrameÀàÐÍµÄyuv¡£×¢Òâ£¬linesize¶ÔÓ¦µÄÊÇÒ»ÐÐµÄ³¤¶È£¬±ÈÈç²âÊÔÊÓÆµÊÇ1280x720£¬ÇÒ
+		//formatÊÇAV_PIX_FMT_YUV420P£¬Ôòlinesize [0]/[1]/[2]·Ö±ð±íÊ¾Ò»ÐÐµÄyuv³¤¶È£¬Îª1280/640/640.
+	    //¶ÔÓÚÒôÆµ£¬ÔòÊÇÒ»Ö¡ÒôÆµµÄ×Ö½ÚÊý£¬Èç¹ûÒôÆµÊÇfloatÐÍ£¨AV_SAMPLE_FMT_S32P£©ÇÒÊÇË«Í¨µÀµÄ£¬Ôò
+	    //linesize = 4 * 2 * as->codecpar->frame_size(as->codecpar->frame_size±íÊ¾Ò»Ö¡Êý¾Ý£¬µ¥Í¨µÀÑù±¾Êý)
 	}
 }
 

@@ -171,6 +171,7 @@ void XFFmpeg::compute_duration_ms() {
 	else {
 		total_ms = 0;
 	}
+	cout << "[DURATION] " << total_ms << " ms" << endl;
 	return;
 }
 
@@ -186,6 +187,8 @@ void XFFmpeg::compute_video_fps() {
 	else {
 		fps = 0;
 	}
+	cout << "[FPS] " << fps << " fps" << endl;
+	return;
 }
 
 bool XFFmpeg::create_decoder(AVFormatContext* ic) {
