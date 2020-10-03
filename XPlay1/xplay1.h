@@ -10,6 +10,9 @@ class XPlay1 : public QWidget
 public:
     XPlay1(QWidget *parent = Q_NULLPTR);
 
+public slots:
+    void open();
+
 private:
     Ui::XPlay1Class ui;
 };

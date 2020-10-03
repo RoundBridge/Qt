@@ -2,9 +2,16 @@
 #include "XFFmpeg.h"
 
 bool XVideoThread::isExit = false;
+bool XVideoThread::isStart = false;
 
 void XVideoThread::run() {  // 重写QT线程函数(在调用start之后会在线程中运行这个函数)
 	while (!isExit) {
+
+		if (!XVideoThread::isStart) {
+			msleep(10);
+			continue;
+		}
+
 		AVPacket *pkt = XFFmpeg::get()->read();
 		if (pkt == NULL || pkt->size <= 0) {
 			msleep(10);

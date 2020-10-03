@@ -4,6 +4,7 @@ class XVideoThread:public QThread
 {
 public:
 	static bool isExit;
+	static bool isStart;
 	static XVideoThread *get() {
 		static XVideoThread vt;
 		return &vt;

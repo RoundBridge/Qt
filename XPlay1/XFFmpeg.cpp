@@ -53,6 +53,7 @@ AVPacket* XFFmpeg::read() {
 		mutex.unlock();
 		cout << "[PACKET] read frame error(" << re << "): " << get_error(re) << endl;
 		if (re == -541478725) {  // -541478725返回值是测试出来的表示读到文件末尾
+			XVideoThread::isStart = false;
 			XVideoThread::isExit = true;
 		}
 		return NULL;

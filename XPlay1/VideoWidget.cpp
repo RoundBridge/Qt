@@ -17,6 +17,7 @@ VideoWidget::VideoWidget(QWidget* p) :QOpenGLWidget(p) {
 	cout << "VideoWidget w/h: " << width() << "/" << height() << endl;
 
 	if (image == NULL) {
+		cout << "Alloc memory for image!" << endl;
 		uchar* buf = new uchar[width()*height()*4];
 		image = new QImage(buf,width(),height(),QImage::Format_ARGB32);
 		if (image == NULL) {
@@ -24,14 +25,8 @@ VideoWidget::VideoWidget(QWidget* p) :QOpenGLWidget(p) {
 			return;
 		}
 	}
-	re = XFFmpeg::get()->open("1024.mp4");
-	if (re != 0) {
-		cout << "open video failed" << endl;
-		return;
-	}
 
-	startTimer(30);  // 开启20毫秒定时器
-	XVideoThread::get()->start();
+	startTimer(30);  // 开启30毫秒定时器(注意，播放完一个文件后定时器并没有关闭，所以可以继续播放另一个文件)
 }
 
 void VideoWidget::paintEvent(QPaintEvent* e) {	// 重载窗口绘制事件函数	
@@ -60,8 +55,7 @@ void VideoWidget::paintEvent(QPaintEvent* e) {	// 重载窗口绘制事件函数
 
 void VideoWidget::timerEvent(QTimerEvent* e) {		// 重载定时器事件函数（界面刷新通过定时器进行）
 	//this->update();
-	//cout << "time out" << endl;
-	this->repaint();
+	this->repaint();  // 这两种方式都可以
 }
 
 VideoWidget:: ~VideoWidget() {
