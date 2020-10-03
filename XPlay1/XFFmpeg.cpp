@@ -93,6 +93,7 @@ AVFrame* XFFmpeg::decode(const AVPacket* pkt) {
 		return NULL;
 	}
 	mutex.unlock();
+	compute_current_pts(yuv, pkt->stream_index);
 	return yuv;
 }
 
@@ -138,7 +139,8 @@ bool XFFmpeg::video_convert(uint8_t* const out, int out_w, int out_h, AVPixelFor
 		* context.Otherwise, frees context and gets a new context with
 		* the new parameters.
 		*/
-		vSwsCtx,  //传NULL会新创建，否则比较该上下文和下面这些参数将要创建出来的上下文是否一致，若一致则直接返回该上下文，不一致则创建新的上下文
+		vSwsCtx,  //传NULL会新创建，否则比较该上下文和下面这些参数将要创建出来的上下文是否一致，
+				  //若一致则直接返回该上下文，不一致则创建新的上下文
 		frame->width, frame->height,	//输入的宽高
 		(AVPixelFormat)frame->format,	//输入的格式，YUV420p
 		out_w, out_h,					//输出的宽高
@@ -163,6 +165,42 @@ bool XFFmpeg::video_convert(uint8_t* const out, int out_w, int out_h, AVPixelFor
 	}
 	mutex.unlock();
 	return true;
+}
+
+void XFFmpeg::compute_current_pts(AVFrame* frame, int streamId) {
+	double rate = 0.0;
+	int* temp = NULL;
+
+	if (videoStream == streamId) { temp = &currentVPtsMs; }
+	else if (audioStream == streamId) { temp = &currentAPtsMs; }
+	else { return; }
+
+	if (frame == NULL)
+	{
+		cout << "[CURRENT PTS] NULL PTR! StreamId: " << streamId << endl;
+		*temp = 0;
+		return;
+	}
+	
+	if (ic) {
+		//time base  我的理解是一个单位所占用的秒数，比如测试发现采样率是48000Hz的音频，其
+		//time base num/den分别是1/48000，也就是一个采样点占用时间1/48000s
+		//而pts，我的理解是该时刻累积的单位数，则该时刻的秒数就是 pts * timebase
+		if (ic->streams[streamId]->time_base.den == 0) {
+			rate = 0.0;
+		}
+		else {
+			rate = (double)ic->streams[streamId]->time_base.num / (double)ic->streams[streamId]->time_base.den;
+		}
+	}
+	else {
+		rate = 0.0;
+	}
+	mutex.lock();
+	//pts: Presentation timestamp in time_base units (time when frame should be shown to user).
+	*temp = frame->pts * rate * 1000;
+	mutex.unlock();
+	return;
 }
 
 void XFFmpeg::compute_duration_ms() {
@@ -277,6 +315,10 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 	}
 
 	return 0;
+}
+
+int XFFmpeg::get_current_video_pts() {
+	return currentVPtsMs;
 }
 
 int XFFmpeg::get_duration_ms() {

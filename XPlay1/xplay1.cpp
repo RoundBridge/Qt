@@ -28,13 +28,21 @@ void XPlay1::open() {
     totalMs = XFFmpeg::get()->get_duration_ms();
     minutes = (totalMs / 1000) / 60;
     seconds = (totalMs / 1000) % 60;
-    sprintf(buf, "00:00/%d:%d", minutes, seconds);
-    ui.playTime->setText(buf);
+    sprintf(buf, "%03d:%02d", minutes, seconds);  // 分别以3位和2位显示分钟和秒数
+    ui.totalTime->setText(buf);
 
     XVideoThread::isStart = true;
     XVideoThread::isExit = false;
 
     XVideoThread::get()->start();
-
+    startTimer(40);  // 40毫秒刷新一次当前播放时间
     return;
+}
+
+void XPlay1::timerEvent(QTimerEvent* e) {
+    int min = (XFFmpeg::get()->get_current_video_pts() / 1000) / 60;
+    int sec = (XFFmpeg::get()->get_current_video_pts() / 1000) % 60;
+    char buf[24] = { 0 };
+    sprintf(buf, "%03d:%02d", min, sec);
+    ui.playTime->setText(buf);
 }

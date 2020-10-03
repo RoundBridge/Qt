@@ -37,12 +37,14 @@ public:
 	std::string get_error(int error_num);
 	int get_duration_ms();
 	int get_video_fps();
+	int get_current_video_pts();
 	int videoStream = 0;
 	int audioStream = 0;
 
 protected:
 	void compute_duration_ms();  // 计算文件总共的播放时长，以毫秒为单位
-	void compute_video_fps();
+	void compute_video_fps();	 // 计算文件的帧率
+	void compute_current_pts(AVFrame*, int);  // 计算当前已经播放的总时长，以毫秒为单位
 	bool create_decoder(AVFormatContext* ic);  // 创建解码器，用于解码（内部用）
 	XFFmpeg();	// 外部不能生成对象了，外部定义对象会失败
 	char error_buf[error_len];
@@ -59,6 +61,8 @@ protected:
 	AVPacket *packet = NULL;
 	AVFrame *yuv = NULL;
 	int total_ms = 0;	// 文件总时长，毫秒为单位
+	int currentVPtsMs = 0;  // 当前已播放的视频总时长，毫秒为单位
+	int currentAPtsMs = 0;  // 当前已播放的音频总时长，毫秒为单位
 	int fps = 0;	// 视频帧率
 };
 

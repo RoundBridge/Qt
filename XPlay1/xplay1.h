@@ -9,6 +9,7 @@ class XPlay1 : public QWidget
 
 public:
     XPlay1(QWidget *parent = Q_NULLPTR);
+    void timerEvent(QTimerEvent* e);
 
 public slots:
     void open();

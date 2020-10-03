@@ -67,7 +67,7 @@ QPushButton:hover{border-image: url(:/XPlay1/res/play_hot.png);}
     <rect>
      <x>60</x>
      <y>550</y>
-     <width>121</width>
+     <width>71</width>
      <height>16</height>
     </rect>
    </property>
@@ -76,7 +76,41 @@ QPushButton:hover{border-image: url(:/XPlay1/res/play_hot.png);}
 color: rgb(255, 255, 255);</string>
    </property>
    <property name="text">
-    <string>00:00/00:00</string>
+    <string>000:00</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="totalTime">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>550</y>
+     <width>71</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">font: 75 14pt &quot;微软雅黑&quot;;
+color: rgb(255, 255, 255);</string>
+   </property>
+   <property name="text">
+    <string>000:00</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="separator">
+   <property name="geometry">
+    <rect>
+     <x>124</x>
+     <y>552</y>
+     <width>54</width>
+     <height>14</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">font: 75 24pt &quot;微软雅黑&quot;;
+color: rgb(255, 255, 255);</string>
+   </property>
+   <property name="text">
+    <string>/</string>
    </property>
   </widget>
  </widget>
