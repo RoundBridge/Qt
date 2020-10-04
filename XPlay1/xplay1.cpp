@@ -1,9 +1,13 @@
 #include "xplay1.h"
 #include "XFFmpeg.h"
+#include <iostream>
 #include <QFileDialog>
 #include <QMessageBox>
 #include "XVideoThread.h"
 #include "VideoWidget.h"
+
+using std::cout;
+using std::endl;
 
 static bool isSliderPressed = false;
 
@@ -53,11 +57,16 @@ void XPlay1::sliderRelease() {
     bool re = XFFmpeg::get()->seek(pos);
     if (re) {
         ui.progressSlider->setValue(place);
+        cout << "[PLAY] Move slider to " << place << endl;
+    }
+    else {
+        cout << "[PLAY] ERR: seek failed!" << endl;
     }
     return;
 }
 
 void XPlay1::timerEvent(QTimerEvent* e) {
+    int place = 0;
     int min = (XFFmpeg::get()->get_current_video_pts() / 1000) / 60;
     int sec = (XFFmpeg::get()->get_current_video_pts() / 1000) % 60;
     char buf[24] = { 0 };
@@ -65,14 +74,14 @@ void XPlay1::timerEvent(QTimerEvent* e) {
     ui.playTime->setText(buf);
 
     if (XFFmpeg::get()->get_duration_ms() > 0) {
-        if (!isSliderPressed) {
-            ui.progressSlider->setValue(
-                XFFmpeg::get()->get_current_video_pts() 
-                * ui.progressSlider->maximum() 
-                / XFFmpeg::get()->get_duration_ms());
+        if (!isSliderPressed) {            
+            place = XFFmpeg::get()->get_current_video_pts() * ui.progressSlider->maximum() / XFFmpeg::get()->get_duration_ms();
+            ui.progressSlider->setValue(place);
+            cout << "[PLAY] Set slider to " << place << endl;
         }        
     }
     else {
+        cout << "[PLAY] WRN: Total duration is 0, Set slider to 0!" << endl;
         ui.progressSlider->setValue(0);
     }
 }

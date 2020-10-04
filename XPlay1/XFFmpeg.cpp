@@ -108,7 +108,7 @@ bool XFFmpeg::video_convert(uint8_t* const out, int out_w, int out_h, AVPixelFor
 		yuv->height == 0) {
 		return false;
 	}
-
+	
 	if (out_pixfmt == AV_PIX_FMT_ARGB
 		|| out_pixfmt == AV_PIX_FMT_RGBA
 		|| out_pixfmt == AV_PIX_FMT_ABGR
@@ -148,6 +148,7 @@ bool XFFmpeg::video_convert(uint8_t* const out, int out_w, int out_h, AVPixelFor
 		SWS_BILINEAR,					//尺寸转换的算法
 		0, 0, 0
 	);
+	//cout << "[CONVERT] the w/h of the input is: " << frame->width << "/" << frame->height << endl;
 	if (vSwsCtx) {
 		// sws_scale函数的开销很大
 		re = sws_scale(			//返回值 the height of the output slice
@@ -161,7 +162,7 @@ bool XFFmpeg::video_convert(uint8_t* const out, int out_w, int out_h, AVPixelFor
 			data,				//输出数据地址
 			lines				//输出行跨度
 		);
-		//cout << "[CONVERT] the height of the output is: " << re << endl;
+		//cout << "[CONVERT] the height of the output is: " << re << endl;		
 	}
 	mutex.unlock();
 	return true;
@@ -240,11 +241,12 @@ bool XFFmpeg::seek(float pos) {
 	mutex.lock();
 	stamp = (float)ic->streams[videoStream]->duration * pos;	
 	re = av_seek_frame(ic, videoStream, stamp, AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME);
-	//avcodec_flush_buffers(ic->streams[videoStream]->codec);  // codec是废弃属性
+	//avcodec_flush_buffers(ic->streams[videoStream]->codec);  // codec是废弃属性，使用会引发错误
 	avcodec_flush_buffers(vc);
 	mutex.unlock();
 	if (re >= 0)
 	{
+		currentVPtsMs = total_ms * pos;  // 先对拖动后的视频pts进行更新一下，防止slider bar回跳
 		return true;
 	}
 	return false;

@@ -35,7 +35,6 @@ void VideoWidget::paintEvent(QPaintEvent* e) {	// 重载窗口绘制事件函数
 	if (XVideoThread::isExit) {
 		return;
 	}
-
 	XFFmpeg::get()->video_convert(image->bits(), width(), height(), AV_PIX_FMT_BGRA);
 	// 调试用（保存解码出来的第100帧，看数据是否正确）
 	if (count == 100) {

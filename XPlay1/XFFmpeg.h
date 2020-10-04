@@ -6,6 +6,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 #include <libswscale/swscale.h>
+#include <libavutil/imgutils.h>
 }
 
 const int error_len = 1024;

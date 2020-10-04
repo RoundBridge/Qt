@@ -17,10 +17,12 @@ void XVideoThread::run() {  // ÖØÐ´QTÏß³Ìº¯Êý(ÔÚµ÷ÓÃstartÖ®ºó»áÔÚÏß³ÌÖÐÔËÐÐÕâ¸öº
 			msleep(10);
 			continue;
 		}
+		
 		if (pkt->stream_index != XFFmpeg::get()->videoStream) {
 			av_packet_unref(pkt);
 			continue;
 		}
+		
 		AVFrame* yuv = XFFmpeg::get()->decode(pkt);		
 		av_packet_unref(pkt);
 		if (XFFmpeg::get()->get_video_fps() > 0) {
