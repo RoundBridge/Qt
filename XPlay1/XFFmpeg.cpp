@@ -161,7 +161,7 @@ bool XFFmpeg::video_convert(uint8_t* const out, int out_w, int out_h, AVPixelFor
 			data,				//输出数据地址
 			lines				//输出行跨度
 		);
-		cout << "[CONVERT] the height of the output is: " << re << endl;
+		//cout << "[CONVERT] the height of the output is: " << re << endl;
 	}
 	mutex.unlock();
 	return true;
@@ -228,6 +228,26 @@ void XFFmpeg::compute_video_fps() {
 	}
 	cout << "[FPS] " << fps << " fps" << endl;
 	return;
+}
+
+bool XFFmpeg::seek(float pos) {
+	int64_t stamp = 0;
+	int re = 0;
+	
+	if (!ic) {
+		return false;
+	}
+	mutex.lock();
+	stamp = (float)ic->streams[videoStream]->duration * pos;	
+	re = av_seek_frame(ic, videoStream, stamp, AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME);
+	//avcodec_flush_buffers(ic->streams[videoStream]->codec);  // codec是废弃属性
+	avcodec_flush_buffers(vc);
+	mutex.unlock();
+	if (re >= 0)
+	{
+		return true;
+	}
+	return false;
 }
 
 bool XFFmpeg::create_decoder(AVFormatContext* ic) {
@@ -332,8 +352,8 @@ int XFFmpeg::get_video_fps() {
 void XFFmpeg::close() {
 	mutex.lock();
 	if (ic) avformat_close_input(&ic);
-	if (vc)avcodec_free_context(&vc);
-	if (ac)avcodec_free_context(&ac);
+	if (vc) avcodec_free_context(&vc);
+	if (ac) avcodec_free_context(&ac);
 	if (vSwsCtx) { 
 		sws_freeContext(vSwsCtx); 
 		vSwsCtx = NULL;

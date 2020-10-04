@@ -13,6 +13,8 @@ public:
 
 public slots:
     void open();
+    void sliderPress();
+    void sliderRelease();
 
 private:
     Ui::XPlay1Class ui;

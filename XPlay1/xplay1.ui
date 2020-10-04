@@ -158,9 +158,43 @@ color: rgb(255, 255, 255);</string>
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>progressSlider</sender>
+   <signal>sliderPressed()</signal>
+   <receiver>XPlay1Class</receiver>
+   <slot>sliderPress()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>213</x>
+     <y>519</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>841</x>
+     <y>236</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>progressSlider</sender>
+   <signal>sliderReleased()</signal>
+   <receiver>XPlay1Class</receiver>
+   <slot>sliderRelease()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>275</x>
+     <y>520</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>857</x>
+     <y>284</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>signal1()</signal>
   <slot>open()</slot>
+  <slot>sliderPress()</slot>
+  <slot>sliderRelease()</slot>
  </slots>
 </ui>

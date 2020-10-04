@@ -38,6 +38,7 @@ public:
 	int get_duration_ms();
 	int get_video_fps();
 	int get_current_video_pts();
+	bool seek(float pos); // pos是拖动滑动条在时间轴上的位置百分比，取值范围0~1
 	int videoStream = 0;
 	int audioStream = 0;
 

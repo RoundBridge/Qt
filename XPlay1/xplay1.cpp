@@ -5,6 +5,8 @@
 #include "XVideoThread.h"
 #include "VideoWidget.h"
 
+static bool isSliderPressed = false;
+
 XPlay1::XPlay1(QWidget *parent)
     : QWidget(parent)
 {
@@ -38,6 +40,23 @@ void XPlay1::open() {
     return;
 }
 
+void XPlay1::sliderPress() {
+    isSliderPressed = true;
+}
+
+void XPlay1::sliderRelease() {
+    float pos = 0.0;
+    int place = ui.progressSlider->value();
+
+    isSliderPressed = false;
+    pos = (float)place / (float)(ui.progressSlider->maximum() + 1);
+    bool re = XFFmpeg::get()->seek(pos);
+    if (re) {
+        ui.progressSlider->setValue(place);
+    }
+    return;
+}
+
 void XPlay1::timerEvent(QTimerEvent* e) {
     int min = (XFFmpeg::get()->get_current_video_pts() / 1000) / 60;
     int sec = (XFFmpeg::get()->get_current_video_pts() / 1000) % 60;
@@ -46,7 +65,12 @@ void XPlay1::timerEvent(QTimerEvent* e) {
     ui.playTime->setText(buf);
 
     if (XFFmpeg::get()->get_duration_ms() > 0) {
-        ui.progressSlider->setValue(XFFmpeg::get()->get_current_video_pts() * 999 / XFFmpeg::get()->get_duration_ms());
+        if (!isSliderPressed) {
+            ui.progressSlider->setValue(
+                XFFmpeg::get()->get_current_video_pts() 
+                * ui.progressSlider->maximum() 
+                / XFFmpeg::get()->get_duration_ms());
+        }        
     }
     else {
         ui.progressSlider->setValue(0);
