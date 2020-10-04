@@ -53,10 +53,17 @@ AVPacket* XFFmpeg::read() {
 		mutex.unlock();
 		cout << "[PACKET] read frame error(" << re << "): " << get_error(re) << endl;
 		if (re == -541478725) {  // -541478725返回值是测试出来的表示读到文件末尾
-			XVideoThread::isStart = false;
-			XVideoThread::isExit = true;
+			set_send_flush_packet(true);
 		}
 		return NULL;
+	}
+	else {
+		if (packet->stream_index == videoStream) {
+			if (packet->flags & AV_PKT_FLAG_KEY) {
+				cout << "[PACKET] --- read KEY packet! ---" << endl;
+			}
+			cout << "[PACKET] packet pts " << packet->pts << endl;
+		}
 	}
 	mutex.unlock();
 	return packet;
@@ -94,6 +101,39 @@ AVFrame* XFFmpeg::decode(const AVPacket* pkt) {
 	}
 	mutex.unlock();
 	compute_current_pts(yuv, pkt->stream_index);
+	return yuv;
+}
+
+AVFrame* XFFmpeg::get_buffered_frames() {
+	int re = 0;
+	static bool flag = true;
+	static int bufferedFramesCnt = 0;
+
+	if (yuv == NULL) {
+		cout << "[GET BUFFERED FRAMES] YUV NULL!"<< endl;
+		return NULL;
+	}
+	mutex.lock();
+	if (flag) {
+		avcodec_send_packet(vc, NULL);
+		flag = false;
+	}
+	re = avcodec_receive_frame(vc, yuv);
+	if (0 != re) {
+		mutex.unlock();
+		if (AVERROR_EOF == re) {
+			XVideoThread::isStart = false;
+			XVideoThread::isExit = true;
+			set_send_flush_packet(false);
+			flag = true;
+		}
+		cout << "[GET BUFFERED FRAMES] " << get_error(re) << "bufferedFramesCnt: " << bufferedFramesCnt << endl;
+		bufferedFramesCnt = 0;
+		return NULL;
+	}
+	mutex.unlock();
+	compute_current_pts(yuv, videoStream);
+	bufferedFramesCnt++;
 	return yuv;
 }
 
@@ -240,7 +280,7 @@ bool XFFmpeg::seek(float pos) {
 	}
 	mutex.lock();
 	stamp = (float)ic->streams[videoStream]->duration * pos;	
-	re = av_seek_frame(ic, videoStream, stamp, AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME);
+	re = av_seek_frame(ic, videoStream, stamp, AVSEEK_FLAG_ANY);
 	//avcodec_flush_buffers(ic->streams[videoStream]->codec);  // codec是废弃属性，使用会引发错误
 	avcodec_flush_buffers(vc);
 	mutex.unlock();
@@ -351,6 +391,26 @@ int XFFmpeg::get_video_fps() {
 	return fps;
 }
 
+bool XFFmpeg::send_flush_packet() {
+	return bSendFlushPacket;
+}
+
+void XFFmpeg::set_send_flush_packet(bool flag) {
+	bSendFlushPacket = flag;
+}
+
+void XFFmpeg::clean() {
+	cout << "total(ms) " << total_ms << ", total V(ms) " << currentVPtsMs << ", total A(ms) " << currentAPtsMs << endl;
+	total_ms = 0;
+	currentAPtsMs = 0;
+	currentVPtsMs = 0;
+	fps = 0;
+	bSendFlushPacket = false;
+	videoStream = 0;
+	audioStream = 0;
+	error_buf[0] = '\0';
+}
+
 void XFFmpeg::close() {
 	mutex.lock();
 	if (ic) avformat_close_input(&ic);
@@ -362,6 +422,7 @@ void XFFmpeg::close() {
 	}
 	if (packet) av_packet_free(&packet);
 	if (yuv) av_frame_free(&yuv);
+	clean();
 	mutex.unlock();
 }
 
@@ -375,7 +436,7 @@ std::string XFFmpeg::get_error(int error_num) {
 
 XFFmpeg::XFFmpeg() {
 	//错误信息缓存初始化
-	error_buf[error_len] = '\0';
+	error_buf[0] = '\0';
 	//初始化封装库（其实最新版本这个函数已被废弃，调用会产生被声明为已否决的错误）
 	av_register_all();
 	//初始化网络库，可以打开rtsp、rtmp、http等协议的流媒体视频

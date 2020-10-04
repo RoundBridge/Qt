@@ -33,7 +33,10 @@ public:
 	int open(const char* path);
 	AVPacket* read();
 	AVFrame *decode(const AVPacket* pkt);
+	AVFrame *get_buffered_frames();  // 获取解码结束阶段缓存在解码器中的图像数据
 	bool video_convert(uint8_t* const out, int out_w, int out_h, AVPixelFormat out_pixfmt);
+	bool send_flush_packet();
+	void set_send_flush_packet(bool flag);
 	void close();
 	std::string get_error(int error_num);
 	int get_duration_ms();
@@ -48,6 +51,7 @@ protected:
 	void compute_video_fps();	 // 计算文件的帧率
 	void compute_current_pts(AVFrame*, int);  // 计算当前已经播放的总时长，以毫秒为单位
 	bool create_decoder(AVFormatContext* ic);  // 创建解码器，用于解码（内部用）
+	void clean();
 	XFFmpeg();	// 外部不能生成对象了，外部定义对象会失败
 	char error_buf[error_len];
 	QMutex mutex;
@@ -66,5 +70,6 @@ protected:
 	int currentVPtsMs = 0;  // 当前已播放的视频总时长，毫秒为单位
 	int currentAPtsMs = 0;  // 当前已播放的音频总时长，毫秒为单位
 	int fps = 0;	// 视频帧率
+	bool bSendFlushPacket = false;  // 读取视频解码包结束后是否发送清理缓存帧
 };
 

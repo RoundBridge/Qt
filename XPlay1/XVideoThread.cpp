@@ -1,30 +1,38 @@
 #include "XVideoThread.h"
 #include "XFFmpeg.h"
+#include <iostream>
+
+using std::cout;
+using std::endl;
 
 bool XVideoThread::isExit = false;
 bool XVideoThread::isStart = false;
 
 void XVideoThread::run() {  // ÖØÐ´QTÏß³Ìº¯Êý(ÔÚµ÷ÓÃstartÖ®ºó»áÔÚÏß³ÌÖÐÔËÐÐÕâ¸öº¯Êý)
 	while (!isExit) {
-
 		if (!XVideoThread::isStart) {
 			msleep(10);
 			continue;
 		}
+		
+		if (XFFmpeg::get()->send_flush_packet()) {
+			XFFmpeg::get()->get_buffered_frames();			
+		}
+		else {
+			AVPacket* pkt = XFFmpeg::get()->read();
+			if (pkt == NULL || pkt->size <= 0) {
+				msleep(10);
+				continue;
+			}
 
-		AVPacket *pkt = XFFmpeg::get()->read();
-		if (pkt == NULL || pkt->size <= 0) {
-			msleep(10);
-			continue;
-		}
-		
-		if (pkt->stream_index != XFFmpeg::get()->videoStream) {
+			if (pkt->stream_index != XFFmpeg::get()->videoStream) {
+				av_packet_unref(pkt);
+				continue;
+			}
+			XFFmpeg::get()->decode(pkt);
 			av_packet_unref(pkt);
-			continue;
 		}
 		
-		AVFrame* yuv = XFFmpeg::get()->decode(pkt);		
-		av_packet_unref(pkt);
 		if (XFFmpeg::get()->get_video_fps() > 0) {
 			msleep(1000 / XFFmpeg::get()->get_video_fps());
 		}
@@ -33,6 +41,8 @@ void XVideoThread::run() {  // ÖØÐ´QTÏß³Ìº¯Êý(ÔÚµ÷ÓÃstartÖ®ºó»áÔÚÏß³ÌÖÐÔËÐÐÕâ¸öº
 	    //¶ÔÓÚÒôÆµ£¬ÔòÊÇÒ»Ö¡ÒôÆµµÄ×Ö½ÚÊý£¬Èç¹ûÒôÆµÊÇfloatÐÍ£¨AV_SAMPLE_FMT_S32P£©ÇÒÊÇË«Í¨µÀµÄ£¬Ôò
 	    //linesize = 4 * 2 * as->codecpar->frame_size(as->codecpar->frame_size±íÊ¾Ò»Ö¡Êý¾Ý£¬µ¥Í¨µÀÑù±¾Êý)
 	}
+	XFFmpeg::get()->close();
+	cout << "[THREAD] ------ Video thread exit! ------" << endl;
 }
 
 XVideoThread:: ~XVideoThread() {

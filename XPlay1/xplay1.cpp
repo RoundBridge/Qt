@@ -66,19 +66,28 @@ void XPlay1::sliderRelease() {
 }
 
 void XPlay1::timerEvent(QTimerEvent* e) {
+    int videoPts = 0;
     int place = 0;
-    int min = (XFFmpeg::get()->get_current_video_pts() / 1000) / 60;
-    int sec = (XFFmpeg::get()->get_current_video_pts() / 1000) % 60;
+    int min = 0;
+    int sec = 0;
     char buf[24] = { 0 };
+
+    videoPts = XFFmpeg::get()->get_current_video_pts();
+    min = (videoPts / 1000) / 60;
+    sec = (videoPts / 1000) % 60;
+
     sprintf(buf, "%03d:%02d", min, sec);
     ui.playTime->setText(buf);
 
     if (XFFmpeg::get()->get_duration_ms() > 0) {
-        if (!isSliderPressed) {            
-            place = XFFmpeg::get()->get_current_video_pts() * ui.progressSlider->maximum() / XFFmpeg::get()->get_duration_ms();
+        if (!isSliderPressed) {          
+            place = videoPts * ui.progressSlider->maximum() / XFFmpeg::get()->get_duration_ms();
             ui.progressSlider->setValue(place);
-            cout << "[PLAY] Set slider to " << place << endl;
+            cout << "[PLAY] Set slider to " << place << ", video pts is "<< videoPts << endl;
         }        
+    }
+    else if (XVideoThread::isExit) {
+        ui.progressSlider->setValue(ui.progressSlider->maximum());
     }
     else {
         cout << "[PLAY] WRN: Total duration is 0, Set slider to 0!" << endl;
