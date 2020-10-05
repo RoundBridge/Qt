@@ -190,11 +190,28 @@ color: rgb(255, 255, 255);</string>
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>play</sender>
+   <signal>clicked()</signal>
+   <receiver>XPlay1Class</receiver>
+   <slot>play()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>445</x>
+     <y>553</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>890</x>
+     <y>210</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>signal1()</signal>
   <slot>open()</slot>
   <slot>sliderPress()</slot>
   <slot>sliderRelease()</slot>
+  <slot>play()</slot>
  </slots>
 </ui>

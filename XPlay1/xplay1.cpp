@@ -9,6 +9,8 @@
 using std::cout;
 using std::endl;
 
+#define PAUSE "QPushButton:hover{border-image:url(:/XPlay1/res/pause_hot.png);}\nQPushButton:!hover{border-image:url(:/XPlay1/res/pause.png);}"
+#define PLAY "QPushButton:hover{border-image:url(:/XPlay1/res/play_hot.png);}\nQPushButton:!hover{border-image:url(:/XPlay1/res/play.png);}"
 static bool isSliderPressed = false;
 
 XPlay1::XPlay1(QWidget *parent)
@@ -16,6 +18,14 @@ XPlay1::XPlay1(QWidget *parent)
 {
     ui.setupUi(this);
     startTimer(40);  // 40毫秒刷新一次当前播放时间
+}
+
+int XPlay1::get_play_state() {
+    return playState;
+}
+
+void XPlay1::set_play_state(int state) {
+    playState = state;
 }
 
 void XPlay1::open() {
@@ -40,8 +50,24 @@ void XPlay1::open() {
 
     XVideoThread::isStart = true;
     XVideoThread::isExit = false;
-    XVideoThread::get()->start();    
+    XVideoThread::get()->start();
+    set_play_state(1);  // 进入播放状态
+    ui.play->setStyleSheet(PAUSE);  // 在播放状态下显示暂停按钮
+
     return;
+}
+
+void XPlay1::play() {
+    if (get_play_state() == 1) {  // 当前是播放状态，点击后进入暂停状态
+        set_play_state(2);
+        ui.play->setStyleSheet(PLAY);  // 在暂停状态下显示播放按钮
+        XVideoThread::isStart = false;
+    }
+    else if(get_play_state() == 2){  // 当前是暂停状态，点击后进入播放状态
+        set_play_state(1);
+        ui.play->setStyleSheet(PAUSE);  // 在播放状态下显示暂停按钮
+        XVideoThread::isStart = true;
+    }
 }
 
 void XPlay1::sliderPress() {
@@ -83,14 +109,14 @@ void XPlay1::timerEvent(QTimerEvent* e) {
         if (!isSliderPressed) {          
             place = videoPts * ui.progressSlider->maximum() / XFFmpeg::get()->get_duration_ms();
             ui.progressSlider->setValue(place);
-            cout << "[PLAY] Set slider to " << place << ", video pts is "<< videoPts << endl;
-        }        
+            //cout << "[PLAY] Set slider to " << place << ", video pts is "<< videoPts << endl;
+        }
     }
     else if (XVideoThread::isExit) {
         ui.progressSlider->setValue(ui.progressSlider->maximum());
     }
     else {
-        cout << "[PLAY] WRN: Total duration is 0, Set slider to 0!" << endl;
+        //cout << "[PLAY] WRN: Total duration is 0, Set slider to 0!" << endl;
         ui.progressSlider->setValue(0);
     }
 }

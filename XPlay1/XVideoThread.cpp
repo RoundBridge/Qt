@@ -1,5 +1,6 @@
 #include "XVideoThread.h"
 #include "XFFmpeg.h"
+#include "xplay1.h"
 #include <iostream>
 
 using std::cout;
@@ -14,7 +15,7 @@ void XVideoThread::run() {  // ÖØÐ´QTÏß³Ìº¯Êý(ÔÚµ÷ÓÃstartÖ®ºó»áÔÚÏß³ÌÖÐÔËÐÐÕâ¸öº
 			msleep(10);
 			continue;
 		}
-		
+
 		if (XFFmpeg::get()->send_flush_packet()) {
 			XFFmpeg::get()->get_buffered_frames();			
 		}

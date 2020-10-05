@@ -60,7 +60,7 @@ AVPacket* XFFmpeg::read() {
 	else {
 		if (packet->stream_index == videoStream) {
 			if (packet->flags & AV_PKT_FLAG_KEY) {
-				cout << "[PACKET] --- read KEY packet! ---" << endl;
+				//cout << "[PACKET] --- read KEY packet! ---" << endl;
 			}
 			cout << "[PACKET] packet pts " << packet->pts << endl;
 		}

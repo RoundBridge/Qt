@@ -10,12 +10,16 @@ class XPlay1 : public QWidget
 public:
     XPlay1(QWidget *parent = Q_NULLPTR);
     void timerEvent(QTimerEvent* e);
+    int get_play_state();
+    void set_play_state(int);
 
 public slots:
     void open();
     void sliderPress();
     void sliderRelease();
+    void play();
 
 private:
     Ui::XPlay1Class ui;
+    int playState = 0;  // 表示当前播放器的状态：0 - 停止，1 - 播放，2 - 暂停
 };
