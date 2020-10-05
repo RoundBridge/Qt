@@ -9,6 +9,7 @@ public:
 	virtual ~VideoWidget();
 	void paintEvent(QPaintEvent *e);		// 重载窗口绘制事件函数
 	void timerEvent(QTimerEvent* e);		// 重载定时器事件函数（界面刷新通过定时器进行）
+	bool resize_image_buffer();
 
 private:
 	QImage* image = NULL;

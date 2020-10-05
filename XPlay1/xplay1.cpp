@@ -125,3 +125,14 @@ void XPlay1::timerEvent(QTimerEvent* e) {
         ui.progressSlider->setValue(0);
     }
 }
+
+void XPlay1::resizeEvent(QResizeEvent* e) {
+    ui.openGLWidget->resize(size());  // size()获取当前窗口的大小（是XPlay1的窗口大小，而不是openGLWidget窗口的大小）
+    ui.progressSlider->move(50, this->height() - 70);
+    ui.progressSlider->resize(this->width() - 100, ui.progressSlider->height());
+    ui.play->move(this->width() / 2 + 50, ui.progressSlider->y() + 17);
+    ui.open->move(this->width() / 2 - 50, ui.progressSlider->y() + 11);
+    ui.playTime->move(ui.progressSlider->x() + 20, ui.play->y() + 10);
+    ui.separator->move(ui.playTime->x() + ui.playTime->width() - 11, ui.playTime->y()+2);
+    ui.totalTime->move(ui.playTime->x() + ui.playTime->width() + 4, ui.playTime->y());
+}   

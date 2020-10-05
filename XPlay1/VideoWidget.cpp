@@ -12,27 +12,46 @@ int count = 0;
 FILE* fp = NULL;
 
 VideoWidget::VideoWidget(QWidget* p) :QOpenGLWidget(p) {
-	int re = 0;
-	setFixedSize(800, 600);
-	cout << "VideoWidget w/h: " << width() << "/" << height() << endl;
+	//setFixedSize(800, 600);  // 设置后最大化或者拉动边框也不会调整尺寸了
+	startTimer(30);  // 开启30毫秒定时器(注意，播放完一个文件后定时器并没有关闭，所以可以继续播放另一个文件)
+}
 
-	if (image == NULL) {
+bool VideoWidget::resize_image_buffer() {
+	static int w = -1;
+	static int h = -1;
+
+	if (w != width() || h != height()) {
+		cout << "VideoWidget w/h: " << width() << "/" << height() << endl;
+		cout << "Last time w/h: " << w << "/" << h << endl;
+
+		w = width();
+		h = height();
+		if (image) {
+			delete image->bits();
+			delete image;
+			image = NULL;
+		}
 		cout << "Alloc memory for image!" << endl;
-		uchar* buf = new uchar[width()*height()*4];
-		image = new QImage(buf,width(),height(),QImage::Format_ARGB32);
+		uchar* buf = new uchar[width() * height() * 4];
+		image = new QImage(buf, width(), height(), QImage::Format_ARGB32);
 		if (image == NULL) {
 			cout << "new image buf failed" << endl;
-			return;
+			return false;
 		}
+		return true;
 	}
-
-	startTimer(30);  // 开启30毫秒定时器(注意，播放完一个文件后定时器并没有关闭，所以可以继续播放另一个文件)
+	else {
+		return true;
+	}
 }
 
 void VideoWidget::paintEvent(QPaintEvent* e) {	// 重载窗口绘制事件函数	
 	QPainter painter;
 
 	if (XVideoThread::isExit) {
+		return;
+	}
+	if (true != resize_image_buffer()) {
 		return;
 	}
 	XFFmpeg::get()->video_convert(image->bits(), width(), height(), AV_PIX_FMT_BGRA);
