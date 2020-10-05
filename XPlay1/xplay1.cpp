@@ -42,7 +42,7 @@ void XPlay1::open() {
         return;
     }
 
-    totalMs = XFFmpeg::get()->get_duration_ms();
+    totalMs = XFFmpeg::get()->get_duration_ms(XFFmpeg::get()->videoStream);
     minutes = (totalMs / 1000) / 60;
     seconds = (totalMs / 1000) % 60;
     sprintf(buf, "%03d:%02d", minutes, seconds);  // 分别以3位和2位显示分钟和秒数
@@ -92,10 +92,12 @@ void XPlay1::sliderRelease() {
 }
 
 void XPlay1::timerEvent(QTimerEvent* e) {
-    int videoPts = 0;
+    int64_t  videoPts = 0;  // 用64位防溢出
     int place = 0;
     int min = 0;
     int sec = 0;
+    int maxSliderBar = 0;
+    int64_t  totalVms = 0;
     char buf[24] = { 0 };
 
     videoPts = XFFmpeg::get()->get_current_video_pts();
@@ -105,11 +107,14 @@ void XPlay1::timerEvent(QTimerEvent* e) {
     sprintf(buf, "%03d:%02d", min, sec);
     ui.playTime->setText(buf);
 
-    if (XFFmpeg::get()->get_duration_ms() > 0) {
-        if (!isSliderPressed) {          
-            place = videoPts * ui.progressSlider->maximum() / XFFmpeg::get()->get_duration_ms();
+    if (XFFmpeg::get()->get_duration_ms(XFFmpeg::get()->videoStream) > 0) {
+        if (!isSliderPressed) {
+            maxSliderBar = ui.progressSlider->maximum();
+            totalVms = XFFmpeg::get()->get_duration_ms(XFFmpeg::get()->videoStream);
+            place = videoPts * maxSliderBar / totalVms;  // videoPts * maxSliderBar如果是32位类型变量，则对于大的视频会溢出
             ui.progressSlider->setValue(place);
-            //cout << "[PLAY] Set slider to " << place << ", video pts is "<< videoPts << endl;
+            //if(XVideoThread::isStart)
+                //cout << "[PLAY] Set slider to " << place << ", videoPts/totalVms/maxSliderBar is "<< videoPts << "/" << totalVms << "/" << maxSliderBar << endl;
         }
     }
     else if (XVideoThread::isExit) {

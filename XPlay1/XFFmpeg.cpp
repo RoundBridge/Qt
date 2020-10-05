@@ -62,7 +62,12 @@ AVPacket* XFFmpeg::read() {
 			if (packet->flags & AV_PKT_FLAG_KEY) {
 				//cout << "[PACKET] --- read KEY packet! ---" << endl;
 			}
-			cout << "[PACKET] packet pts " << packet->pts << endl;
+			// 有些视频读出来的packet中的pts是未定义的
+			if (packet->pts == AV_NOPTS_VALUE) {  // AV_NOPTS_VALUE ((int64_t)UINT64_C(0x8000000000000000))(-9223372036854775808)
+				//cout << "[PACKET] packet pts undefined timestamp value: " << AV_NOPTS_VALUE << endl;
+			}
+			//cout << "[PACKET] packet pts " << packet->pts << endl;  // AV_NOPTS_VALUE
+
 		}
 	}
 	mutex.unlock();
@@ -238,20 +243,41 @@ void XFFmpeg::compute_current_pts(AVFrame* frame, int streamId) {
 		rate = 0.0;
 	}
 	mutex.lock();
-	//pts: Presentation timestamp in time_base units (time when frame should be shown to user).
-	*temp = frame->pts * rate * 1000;
+	/**
+	 *pts: Presentation timestamp in time_base units (time when frame should be shown to user).
+	 */
+	//*temp = frame->pts * rate * 1000;  // 有时读到的pts是AV_NOPTS_VALUE，所以这里采用best_effort_timestamp
+	/**
+	 * frame timestamp estimated using various heuristics, in stream time base
+	 * - encoding: unused
+	 * - decoding: set by libavcodec, read by user.
+	 */
+	*temp = frame->best_effort_timestamp * rate * 1000;
 	mutex.unlock();
+	//if (videoStream == streamId)
+		//cout << "[CURRENT PTS] best_effort_timestamp: " << frame->best_effort_timestamp << endl;
+		//cout << "[CURRENT PTS] pts/temp: " << frame->pts << "/" << *temp << endl;
 	return;
 }
 
 void XFFmpeg::compute_duration_ms() {
 	if (ic) {
-		total_ms = ic->duration / (AV_TIME_BASE / 1000);
+		if (ic->streams[videoStream]->duration == AV_NOPTS_VALUE) {
+			totalVms = ic->duration / (AV_TIME_BASE / 1000);  // AV_TIME_BASE表示1秒有AV_TIME_BASE个单位
+		}
+		else {
+			totalVms = 1000 * ic->streams[videoStream]->duration * ic->streams[videoStream]->time_base.num / ic->streams[videoStream]->time_base.den;
+		}
+		// todo: 后续需加入对音频的支持
 	}
 	else {
-		total_ms = 0;
+		totalVms = 0;
+		totalAms = 0;
 	}
-	cout << "[DURATION] " << total_ms << " ms" << endl;
+	cout << "[DURATION] In stream, duration/num/den: " << ic->streams[videoStream]->duration << "/" << ic->streams[videoStream]->time_base.num << "/" << ic->streams[videoStream]->time_base.den << endl;
+	cout << "[DURATION] In ic,	   duration " << ic->duration << endl; 
+	cout << "[DURATION] totalVms: " << totalVms << " ms" << endl;
+	cout << "[DURATION] totalAms: " << totalAms << " ms" << endl;
 	return;
 }
 
@@ -286,7 +312,7 @@ bool XFFmpeg::seek(float pos) {
 	mutex.unlock();
 	if (re >= 0)
 	{
-		currentVPtsMs = total_ms * pos;  // 先对拖动后的视频pts进行更新一下，防止slider bar回跳
+		currentVPtsMs = totalVms * pos;  // 先对拖动后的视频pts进行更新一下，防止slider bar回跳
 		return true;
 	}
 	return false;
@@ -383,8 +409,8 @@ int XFFmpeg::get_current_video_pts() {
 	return currentVPtsMs;
 }
 
-int XFFmpeg::get_duration_ms() {
-	return total_ms;
+int XFFmpeg::get_duration_ms(int streamId) {
+	return (streamId == videoStream ? totalVms : totalAms);
 }
 
 int XFFmpeg::get_video_fps() {
@@ -400,8 +426,8 @@ void XFFmpeg::set_send_flush_packet(bool flag) {
 }
 
 void XFFmpeg::clean() {
-	cout << "total(ms) " << total_ms << ", total V(ms) " << currentVPtsMs << ", total A(ms) " << currentAPtsMs << endl;
-	total_ms = 0;
+	totalAms = 0;
+	totalVms = 0;
 	currentAPtsMs = 0;
 	currentVPtsMs = 0;
 	fps = 0;

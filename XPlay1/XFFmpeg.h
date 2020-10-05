@@ -39,7 +39,7 @@ public:
 	void set_send_flush_packet(bool flag);
 	void close();
 	std::string get_error(int error_num);
-	int get_duration_ms();
+	int get_duration_ms(int streamId);
 	int get_video_fps();
 	int get_current_video_pts();
 	bool seek(float pos); // pos是拖动滑动条在时间轴上的位置百分比，取值范围0~1
@@ -66,7 +66,8 @@ protected:
 	SwsContext* vSwsCtx = NULL;  // 视频像素尺寸及格式转换上下文
 	AVPacket *packet = NULL;
 	AVFrame *yuv = NULL;
-	int total_ms = 0;	// 文件总时长，毫秒为单位
+	int totalVms = 0;	// 视频总时长，毫秒为单位
+	int totalAms = 0;	// 音频总时长，毫秒为单位
 	int currentVPtsMs = 0;  // 当前已播放的视频总时长，毫秒为单位
 	int currentAPtsMs = 0;  // 当前已播放的音频总时长，毫秒为单位
 	int fps = 0;	// 视频帧率
