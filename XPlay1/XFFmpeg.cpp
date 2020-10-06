@@ -8,6 +8,7 @@ using std::endl;
 #pragma comment(lib, "avformat.lib")
 #pragma comment(lib, "avutil.lib")
 #pragma comment(lib, "swscale.lib")
+#pragma comment(lib, "swresample.lib")
 
 int XFFmpeg::open(const char* path) {	
 	//先关闭现有的资源
@@ -74,15 +75,20 @@ AVPacket* XFFmpeg::read() {
 	return packet;
 }
 
-AVFrame* XFFmpeg::decode(const AVPacket* pkt) {
+bool XFFmpeg::decode(const AVPacket* pkt) {
 	AVCodecContext* cc = NULL;
+	AVFrame* frame = NULL;
 
 	if (yuv == NULL) {
 		yuv = av_frame_alloc();
 	}
+	if (pcm == NULL) {
+		pcm = av_frame_alloc();
+	}
 
-	if (pkt->stream_index == videoStream) { cc = vc; }
-	if (pkt->stream_index == audioStream) { cc = ac; }
+	if (pkt->stream_index == videoStream) { cc = vc; frame = yuv; }
+	else if (pkt->stream_index == audioStream) { cc = ac; frame = pcm; }
+	else { cout << "[DECODE] stream index wrong: " << pkt->stream_index << endl; return false; }
 
 	mutex.lock();
 	// 如果是视频包，pkt中的stream_index直接指明视频流的idx，音频包同理
@@ -92,21 +98,21 @@ AVFrame* XFFmpeg::decode(const AVPacket* pkt) {
 	if (0 != re) {
 		mutex.unlock();
 		cout << "[DECODE] avcodec_send_packet failed: " << get_error(re) << endl;
-		return NULL;
+		return false;
 	}
 	// 只是从解码线程中获取解码结果，几乎不占用CPU，一次send（一次可能发送多个音频帧）可能对应多次receive
 	// 为什么这里只获取一次？难道不应该多获取几次，把里面的帧全部获取出来？
 	// 下面avcodec_receive_frame的第一个参数不能用ic->streams[pkt->stream_index]->codec了，因为它已经是
 	// 废弃属性了，用它的话，函数调用失败
-	re = avcodec_receive_frame(cc, yuv);
+	re = avcodec_receive_frame(cc, frame);
 	if (0 != re) {
 		mutex.unlock();
 		cout << "[DECODE] avcodec_receive_frame failed: " << get_error(re) << endl;
-		return NULL;
+		return false;
 	}
 	mutex.unlock();
-	compute_current_pts(yuv, pkt->stream_index);
-	return yuv;
+	compute_current_pts(frame, pkt->stream_index);
+	return true;
 }
 
 AVFrame* XFFmpeg::get_buffered_frames() {
@@ -211,6 +217,46 @@ bool XFFmpeg::video_convert(uint8_t* const out, int out_w, int out_h, AVPixelFor
 	}
 	mutex.unlock();
 	return true;
+}
+
+int XFFmpeg::audio_convert(uint8_t* const out) {
+	uint8_t** dataOut;
+	int re = 0;
+
+	if (!ic || !out || !pcm) {
+		cout << "[AUDIO CONVERT] NULL PTR!" << endl;
+		return 0;
+	}
+	mutex.lock();
+	if (!aSwrCtx) {
+		aSwrCtx = swr_alloc();
+		if (NULL == swr_alloc_set_opts(aSwrCtx,
+			ac->channel_layout,  // 重采样输出的声道模式不变，用的就是输入的声道模式。声道模式，可以认为是比如单声道、双声道或者2.1声道、5.1声道之类的，等等
+			AV_SAMPLE_FMT_S16,   // 重采样输出固定成16位
+			ac->sample_rate,	 // 重采样输出的采样率这里不变化
+			ac->channel_layout,	 // 输入的声道模式
+			ac->sample_fmt,		 // 输入的样本格式
+			ac->sample_rate,	 // 输入的采样率
+			0,
+			NULL)) 
+		{
+			mutex.unlock();
+			cout << "[AUDIO CONVERT] swr_alloc_set_opts failed!" << endl;
+			return 0;
+		}
+		swr_init(aSwrCtx);
+	}
+	*dataOut = out;
+	re = swr_convert(aSwrCtx, dataOut, 10000, (const uint8_t**)pcm->data, pcm->nb_samples); // 第三个参数只要保证大于一帧音频数据的重采样输出大小即可，一般不会超过10000
+	if (re <= 0) {
+		mutex.unlock();
+		cout << "[AUDIO CONVERT] swr_convert error, " << get_error(re) << endl;
+		return re;
+	}
+	// Get the required buffer size for the given audio parameters(重采样后输出数据需要的空间大小).
+	re = av_samples_get_buffer_size(NULL, ac->channels, pcm->nb_samples, AV_SAMPLE_FMT_S16, 0);
+	mutex.unlock();
+	return re;
 }
 
 void XFFmpeg::compute_current_pts(AVFrame* frame, int streamId) {
@@ -466,8 +512,10 @@ void XFFmpeg::close() {
 		sws_freeContext(vSwsCtx); 
 		vSwsCtx = NULL;
 	}
+	if (aSwrCtx) { swr_free(&aSwrCtx); }
 	if (packet) av_packet_free(&packet);
 	if (yuv) av_frame_free(&yuv);
+	if (pcm) av_frame_free(&pcm);
 	clean();
 	mutex.unlock();
 }

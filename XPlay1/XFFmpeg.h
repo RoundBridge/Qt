@@ -7,6 +7,7 @@ extern "C" {
 #include <libavutil/avutil.h>
 #include <libswscale/swscale.h>
 #include <libavutil/imgutils.h>
+#include <libswresample/swresample.h>
 }
 
 const int error_len = 1024;
@@ -32,9 +33,10 @@ public:
 	virtual ~XFFmpeg();
 	int open(const char* path);
 	AVPacket* read();
-	AVFrame *decode(const AVPacket* pkt);
+	bool decode(const AVPacket* pkt);
 	AVFrame *get_buffered_frames();  // 获取解码结束阶段缓存在解码器中的图像数据
 	bool video_convert(uint8_t* const out, int out_w, int out_h, AVPixelFormat out_pixfmt);
+	int audio_convert(uint8_t* const out);
 	bool send_flush_packet();
 	void set_send_flush_packet(bool flag);
 	void close();
@@ -79,5 +81,9 @@ protected:
 	int sampleSize = 16;
 	// 通道数
 	int channel = 2;
+	// 存储解码后音频数据的帧指针
+	AVFrame* pcm = NULL;
+	// 音频重采样转换上下文
+	SwrContext* aSwrCtx = NULL;
 };
 
