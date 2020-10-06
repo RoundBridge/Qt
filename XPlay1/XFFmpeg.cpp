@@ -405,6 +405,21 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 	}
 	else {
 		cout << "[CREATE DECODER] audio - avcodec_open2 success!" << endl;
+		sampleRate = ac->sample_rate;
+		channel = ac->channels;
+		switch (ac->sample_fmt) {
+			case AV_SAMPLE_FMT_S16:
+				sampleSize = 16;
+				break;
+			case AV_SAMPLE_FMT_S32:
+			case AV_SAMPLE_FMT_FLTP:
+				sampleSize = 32;
+				break;
+			default:
+				cout << "[CREATE DECODER] Error sample fmt " << ac->sample_fmt << endl;
+				return -5;
+		}
+		cout << "[CREATE DECODER] sampleRate/channel/sampleSize " << sampleRate << "/" << channel << "/" << sampleSize << endl;
 	}
 
 	return 0;

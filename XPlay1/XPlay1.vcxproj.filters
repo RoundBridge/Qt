@@ -53,6 +53,9 @@
     <ClCompile Include="XSlider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="XAudioPlay.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="XFFmpeg.h">
@@ -67,7 +70,7 @@
     <ClInclude Include="XVideoThread.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="XSlider.h">
+    <ClInclude Include="XAudioPlay.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -80,5 +83,10 @@
     <Image Include="res\logo.ico">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="XSlider.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
 </Project>

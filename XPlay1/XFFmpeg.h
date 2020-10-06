@@ -72,5 +72,12 @@ protected:
 	int currentAPtsMs = 0;  // 当前已播放的音频总时长，毫秒为单位
 	int fps = 0;	// 视频帧率
 	bool bSendFlushPacket = false;  // 读取视频解码包结束后是否发送清理缓存帧
+
+	// 采样率
+	int sampleRate = 48000;
+	// 样本点比特数
+	int sampleSize = 16;
+	// 通道数
+	int channel = 2;
 };
 
