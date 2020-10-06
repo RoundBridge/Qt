@@ -113,7 +113,7 @@ color: rgb(255, 255, 255);</string>
     <string>/</string>
    </property>
   </widget>
-  <widget class="QSlider" name="progressSlider">
+  <widget class="XSlider" name="progressSlider">
    <property name="geometry">
     <rect>
      <x>50</x>
@@ -136,6 +136,11 @@ color: rgb(255, 255, 255);</string>
    <class>VideoWidget</class>
    <extends>QOpenGLWidget</extends>
    <header>videowidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>XSlider</class>
+   <extends>QSlider</extends>
+   <header>xslider.h</header>
   </customwidget>
  </customwidgets>
  <resources>

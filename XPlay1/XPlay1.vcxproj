@@ -96,6 +96,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="XSlider.cpp" />
     <ClCompile Include="XVideoThread.cpp" />
     <QtRcc Include="xplay1.qrc" />
     <QtUic Include="xplay1.ui" />
@@ -109,6 +110,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="VideoWidget.h" />
     <ClInclude Include="XFFmpeg.h" />
+    <ClInclude Include="XSlider.h" />
     <ClInclude Include="XVideoThread.h" />
   </ItemGroup>
   <ItemGroup>

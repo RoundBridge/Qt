@@ -132,7 +132,7 @@ AVFrame* XFFmpeg::get_buffered_frames() {
 			set_send_flush_packet(false);
 			flag = true;
 		}
-		cout << "[GET BUFFERED FRAMES] " << get_error(re) << "bufferedFramesCnt: " << bufferedFramesCnt << endl;
+		cout << "[GET BUFFERED FRAMES] " << get_error(re) << ", bufferedFramesCnt: " << bufferedFramesCnt << endl;
 		bufferedFramesCnt = 0;
 		return NULL;
 	}
@@ -254,9 +254,10 @@ void XFFmpeg::compute_current_pts(AVFrame* frame, int streamId) {
 	 */
 	*temp = frame->best_effort_timestamp * rate * 1000;
 	mutex.unlock();
-	//if (videoStream == streamId)
-		//cout << "[CURRENT PTS] best_effort_timestamp: " << frame->best_effort_timestamp << endl;
-		//cout << "[CURRENT PTS] pts/temp: " << frame->pts << "/" << *temp << endl;
+	//if (videoStream == streamId) {
+	//	cout << "[CURRENT PTS] ------ best_effort_timestamp: " << frame->best_effort_timestamp << endl;
+	//	cout << "[CURRENT PTS] frame->pts/temp: " << frame->pts << "/" << *temp << endl;
+	//}
 	return;
 }
 
@@ -306,7 +307,7 @@ bool XFFmpeg::seek(float pos) {
 	}
 	mutex.lock();
 	stamp = (float)ic->streams[videoStream]->duration * pos;	
-	re = av_seek_frame(ic, videoStream, stamp, AVSEEK_FLAG_ANY);
+	re = av_seek_frame(ic, videoStream, stamp, AVSEEK_FLAG_FRAME|AVSEEK_FLAG_BACKWARD);
 	//avcodec_flush_buffers(ic->streams[videoStream]->codec);  // codec是废弃属性，使用会引发错误
 	avcodec_flush_buffers(vc);
 	mutex.unlock();
@@ -315,7 +316,11 @@ bool XFFmpeg::seek(float pos) {
 		currentVPtsMs = totalVms * pos;  // 先对拖动后的视频pts进行更新一下，防止slider bar回跳
 		return true;
 	}
-	return false;
+	else
+	{
+		cout << "[SEEK] av_seek_frame error: " << get_error(re) << endl;
+		return false;
+	}	
 }
 
 bool XFFmpeg::create_decoder(AVFormatContext* ic) {

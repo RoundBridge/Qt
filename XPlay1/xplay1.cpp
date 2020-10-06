@@ -113,8 +113,9 @@ void XPlay1::timerEvent(QTimerEvent* e) {
             totalVms = XFFmpeg::get()->get_duration_ms(XFFmpeg::get()->videoStream);
             place = videoPts * maxSliderBar / totalVms;  // videoPts * maxSliderBar如果是32位类型变量，则对于大的视频会溢出
             ui.progressSlider->setValue(place);
-            //if(XVideoThread::isStart)
-                //cout << "[PLAY] Set slider to " << place << ", videoPts/totalVms/maxSliderBar is "<< videoPts << "/" << totalVms << "/" << maxSliderBar << endl;
+            //if (XVideoThread::isStart) {
+            //    cout << "[PLAY] Set slider to " << place << ", videoPts/totalVms/maxSliderBar is " << videoPts << "/" << totalVms << "/" << maxSliderBar << endl;
+            //}
         }
     }
     else if (XVideoThread::isExit) {
