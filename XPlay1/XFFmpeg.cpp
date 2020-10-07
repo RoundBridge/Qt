@@ -59,6 +59,7 @@ AVPacket* XFFmpeg::read() {
 		return NULL;
 	}
 	else {
+		cout <<"stream id: "<< packet->stream_index << ", " << (uint)packet <<", " << (uint)packet->data << endl;
 		if (packet->stream_index == videoStream) {
 			if (packet->flags & AV_PKT_FLAG_KEY) {
 				//cout << "[PACKET] V --- read KEY packet! ---" << endl;
@@ -234,7 +235,7 @@ bool XFFmpeg::video_convert(uint8_t* const out, int out_w, int out_h, AVPixelFor
 }
 
 int XFFmpeg::audio_convert(uint8_t* const out) {
-	uint8_t** dataOut;
+	uint8_t* dataOut[1];
 	int re = 0;
 
 	if (!ic || !out || !pcm) {
@@ -260,7 +261,7 @@ int XFFmpeg::audio_convert(uint8_t* const out) {
 		}
 		swr_init(aSwrCtx);
 	}
-	*dataOut = out;
+	dataOut[0] = out;
 	re = swr_convert(aSwrCtx, dataOut, MAXAUDIOSWRLEN, (const uint8_t**)pcm->data, pcm->nb_samples); // 第三个参数只要保证大于一帧音频数据的重采样输出大小即可，一般不会超过10000
 	if (re <= 0) {
 		mutex.unlock();
@@ -501,6 +502,10 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 
 int XFFmpeg::get_current_video_pts() {
 	return currentVPtsMs;
+}
+
+int XFFmpeg::get_current_audio_pts() {
+	return currentAPtsMs;
 }
 
 int XFFmpeg::get_duration_ms(int streamId) {
