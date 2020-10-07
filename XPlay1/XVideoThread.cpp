@@ -2,17 +2,29 @@
 #include "XFFmpeg.h"
 #include "xplay1.h"
 #include <iostream>
+#include <list>
+#include "XAudioPlay.h"
 
 using std::cout;
 using std::endl;
+using std::list;
 
 bool XVideoThread::isExit = false;
 bool XVideoThread::isStart = false;
 
 void XVideoThread::run() {  // ÖØÐ´QTÏß³Ìº¯Êý(ÔÚµ÷ÓÃstartÖ®ºó»áÔÚÏß³ÌÖÐÔËÐÐÕâ¸öº¯Êý)
+	char aout[MAXAUDIOSWRLEN] = { 0 };  // ÓÃÓÚ´æ·Åaudio_convert³öÀ´µÄÒôÆµÊý¾Ý
+
 	while (!isExit) {
 		if (!XVideoThread::isStart) {
 			msleep(10);
+			continue;
+		}
+		// »ñÈ¡³öÀ´µÄ¿ÕÓàÒôÆµ»º´æ´óÐ¡²»¹»Ð´Ò»Ö¡ÒôÆµÊý¾Ý
+		if (XAudioPlay::get()->get_free_buffer_size() < 7680)
+		{
+			cout << "aaaaaaaaaaaaaaa" << endl;
+			msleep(1);
 			continue;
 		}
 
@@ -25,13 +37,22 @@ void XVideoThread::run() {  // ÖØÐ´QTÏß³Ìº¯Êý(ÔÚµ÷ÓÃstartÖ®ºó»áÔÚÏß³ÌÖÐÔËÐÐÕâ¸öº
 				msleep(10);
 				continue;
 			}
-
-			if (pkt->stream_index != XFFmpeg::get()->videoStream) {
+			if (pkt->stream_index == XFFmpeg::get()->audioStream)
+			{
+				XFFmpeg::get()->decode(pkt);
 				av_packet_unref(pkt);
+				int len = XFFmpeg::get()->audio_convert((uint8_t* const)aout);
+				XAudioPlay::get()->write(aout, len);
 				continue;
 			}
-			XFFmpeg::get()->decode(pkt);
-			av_packet_unref(pkt);
+			else if (pkt->stream_index == XFFmpeg::get()->videoStream) {
+				XFFmpeg::get()->decode(pkt);
+				av_packet_unref(pkt);
+			}
+			else{
+				cout << "[THREAD] Unknown stream ID: " << pkt->stream_index << endl;
+				av_packet_unref(pkt);
+			}
 		}
 		
 		if (XFFmpeg::get()->get_video_fps() > 0) {

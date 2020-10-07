@@ -61,14 +61,27 @@ AVPacket* XFFmpeg::read() {
 	else {
 		if (packet->stream_index == videoStream) {
 			if (packet->flags & AV_PKT_FLAG_KEY) {
-				//cout << "[PACKET] --- read KEY packet! ---" << endl;
+				//cout << "[PACKET] V --- read KEY packet! ---" << endl;
 			}
 			// 有些视频读出来的packet中的pts是未定义的
 			if (packet->pts == AV_NOPTS_VALUE) {  // AV_NOPTS_VALUE ((int64_t)UINT64_C(0x8000000000000000))(-9223372036854775808)
-				//cout << "[PACKET] packet pts undefined timestamp value: " << AV_NOPTS_VALUE << endl;
+				//cout << "[PACKET] V packet pts undefined timestamp value: " << AV_NOPTS_VALUE << endl;
 			}
-			//cout << "[PACKET] packet pts " << packet->pts << endl;  // AV_NOPTS_VALUE
-
+			else {
+				//cout << "[PACKET] V packet pts " << packet->pts << endl;  // AV_NOPTS_VALUE
+			}
+		}
+		else if (packet->stream_index == audioStream) {
+			if (packet->flags & AV_PKT_FLAG_KEY) {
+				//cout << "[PACKET] A --- read KEY packet! ---" << endl;
+			}
+			// 有些音频读出来的packet中的pts是未定义的
+			if (packet->pts == AV_NOPTS_VALUE) {  // AV_NOPTS_VALUE ((int64_t)UINT64_C(0x8000000000000000))(-9223372036854775808)
+				//cout << "[PACKET] A packet pts undefined timestamp value: " << AV_NOPTS_VALUE << endl;
+			}
+			else {
+				//cout << "[PACKET] A packet pts " << packet->pts << endl;  // AV_NOPTS_VALUE
+			}
 		}
 	}
 	mutex.unlock();
@@ -119,7 +132,7 @@ AVFrame* XFFmpeg::get_buffered_frames() {
 	int re = 0;
 	static bool flag = true;
 	static int bufferedFramesCnt = 0;
-
+		
 	if (yuv == NULL) {
 		cout << "[GET BUFFERED FRAMES] YUV NULL!"<< endl;
 		return NULL;
@@ -132,6 +145,7 @@ AVFrame* XFFmpeg::get_buffered_frames() {
 	re = avcodec_receive_frame(vc, yuv);
 	if (0 != re) {
 		mutex.unlock();
+		// the decoder has been fully flushed, and there will be no more output frames
 		if (AVERROR_EOF == re) {
 			XVideoThread::isStart = false;
 			XVideoThread::isExit = true;
@@ -247,7 +261,7 @@ int XFFmpeg::audio_convert(uint8_t* const out) {
 		swr_init(aSwrCtx);
 	}
 	*dataOut = out;
-	re = swr_convert(aSwrCtx, dataOut, 10000, (const uint8_t**)pcm->data, pcm->nb_samples); // 第三个参数只要保证大于一帧音频数据的重采样输出大小即可，一般不会超过10000
+	re = swr_convert(aSwrCtx, dataOut, MAXAUDIOSWRLEN, (const uint8_t**)pcm->data, pcm->nb_samples); // 第三个参数只要保证大于一帧音频数据的重采样输出大小即可，一般不会超过10000
 	if (re <= 0) {
 		mutex.unlock();
 		cout << "[AUDIO CONVERT] swr_convert error, " << get_error(re) << endl;
@@ -273,7 +287,7 @@ void XFFmpeg::compute_current_pts(AVFrame* frame, int streamId) {
 		*temp = 0;
 		return;
 	}
-	
+	mutex.lock();
 	if (ic) {
 		//time base  我的理解是一个单位所占用的秒数，比如测试发现采样率是48000Hz的音频，其
 		//time base num/den分别是1/48000，也就是一个采样点占用时间1/48000s
@@ -288,7 +302,6 @@ void XFFmpeg::compute_current_pts(AVFrame* frame, int streamId) {
 	else {
 		rate = 0.0;
 	}
-	mutex.lock();
 	/**
 	 *pts: Presentation timestamp in time_base units (time when frame should be shown to user).
 	 */
@@ -300,10 +313,17 @@ void XFFmpeg::compute_current_pts(AVFrame* frame, int streamId) {
 	 */
 	*temp = frame->best_effort_timestamp * rate * 1000;
 	mutex.unlock();
-	//if (videoStream == streamId) {
-	//	cout << "[CURRENT PTS] ------ best_effort_timestamp: " << frame->best_effort_timestamp << endl;
-	//	cout << "[CURRENT PTS] frame->pts/temp: " << frame->pts << "/" << *temp << endl;
-	//}
+	if (videoStream == streamId) {
+		cout << "[CURRENT PTS] V ------ best_effort_timestamp: " << frame->best_effort_timestamp << endl;
+		cout << "[CURRENT PTS] V frame->pts/temp: " << frame->pts << "/" << *temp << endl;
+	}
+	else if (audioStream == streamId) {
+		cout << "[CURRENT PTS] A ------ best_effort_timestamp: " << frame->best_effort_timestamp << endl;
+		cout << "[CURRENT PTS] A frame->pts/temp: " << frame->pts << "/" << *temp << endl;
+	}
+	else {
+	
+	}
 	return;
 }
 
@@ -315,16 +335,24 @@ void XFFmpeg::compute_duration_ms() {
 		else {
 			totalVms = 1000 * ic->streams[videoStream]->duration * ic->streams[videoStream]->time_base.num / ic->streams[videoStream]->time_base.den;
 		}
-		// todo: 后续需加入对音频的支持
+		if (ic->streams[audioStream]->duration == AV_NOPTS_VALUE) {
+			totalAms = ic->duration / (AV_TIME_BASE / 1000);  // AV_TIME_BASE表示1秒有AV_TIME_BASE个单位
+		}
+		else {
+			totalAms = 1000 * ic->streams[audioStream]->duration * ic->streams[audioStream]->time_base.num / ic->streams[audioStream]->time_base.den;
+		}
 	}
 	else {
 		totalVms = 0;
 		totalAms = 0;
 	}
-	cout << "[DURATION] In stream, duration/num/den: " << ic->streams[videoStream]->duration << "/" << ic->streams[videoStream]->time_base.num << "/" << ic->streams[videoStream]->time_base.den << endl;
+	cout << "[DURATION] There ara " << ic->nb_streams << " streams: " << endl;
+	cout << "[DURATION] TotalVms: " << totalVms << " ms" << endl;
+	cout << "[DURATION] TotalAms: " << totalAms << " ms" << endl;
+	cout << "[DURATION] In stream, Vduration/num/den: " << ic->streams[videoStream]->duration << "/" << ic->streams[videoStream]->time_base.num << "/" << ic->streams[videoStream]->time_base.den << endl;
+	cout << "[DURATION] In stream, Aduration/num/den: " << ic->streams[audioStream]->duration << "/" << ic->streams[audioStream]->time_base.num << "/" << ic->streams[audioStream]->time_base.den << endl;
 	cout << "[DURATION] In ic,	   duration " << ic->duration << endl; 
-	cout << "[DURATION] totalVms: " << totalVms << " ms" << endl;
-	cout << "[DURATION] totalAms: " << totalAms << " ms" << endl;
+
 	return;
 }
 

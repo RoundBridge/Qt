@@ -5,6 +5,7 @@
 #include <QMessageBox>
 #include "XVideoThread.h"
 #include "VideoWidget.h"
+#include "XAudioPlay.h"
 
 using std::cout;
 using std::endl;
@@ -41,6 +42,11 @@ void XPlay1::open() {
         QMessageBox::information(this, "ERROR: ", "open file failed");
         return;
     }
+
+    XAudioPlay::get()->sampleRate = XFFmpeg::get()->sampleRate;
+    XAudioPlay::get()->channel = XFFmpeg::get()->channel;
+    XAudioPlay::get()->sampleSize = XFFmpeg::get() ->sampleSize;
+    XAudioPlay::get()->start();
 
     totalMs = XFFmpeg::get()->get_duration_ms(XFFmpeg::get()->videoStream);
     minutes = (totalMs / 1000) / 60;
