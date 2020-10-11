@@ -500,8 +500,33 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 	return 0;
 }
 
-int XFFmpeg::get_current_video_pts() {
-	return currentVPtsMs;
+/*
+	如果pkt是空的，返回当前已经解码的最新视频帧的pts，否则返回pkt包所指视频帧的pts
+*/
+int XFFmpeg::get_current_video_pts(AVPacket* pkt) {
+	mutex.lock();
+	int pts = 0;
+	double rate = 0.0;
+
+	if (NULL == pkt) {
+		pts = currentVPtsMs;
+	}
+	else {		
+		if (!ic)
+		{
+			mutex.unlock();
+			return -1;
+		}
+		if (ic->streams[videoStream]->time_base.den == 0) {
+			rate = 0.0;
+		}
+		else {
+			rate = (double)ic->streams[videoStream]->time_base.num / (double)ic->streams[videoStream]->time_base.den;
+		}
+		pts = pkt->pts * rate * 1000;
+	}
+	mutex.unlock();
+	return pts;
 }
 
 int XFFmpeg::get_current_audio_pts() {

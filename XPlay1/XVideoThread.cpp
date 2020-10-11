@@ -14,16 +14,22 @@ bool XVideoThread::isStart = false;
 
 void XVideoThread::run() {  // ÖØĞ´QTÏß³Ìº¯Êı(ÔÚµ÷ÓÃstartÖ®ºó»áÔÚÏß³ÌÖĞÔËĞĞÕâ¸öº¯Êı)
 	char aout[MAXAUDIOSWRLEN] = { 0 };  // ÓÃÓÚ´æ·Åaudio_convert³öÀ´µÄÒôÆµÊı¾İ
+	int free = 0;
+	int vPts = -1;
+	int aPts = -1;
+	list<AVPacket*> videoPackets;
+	AVPacket* pkt2 = NULL;
 
 	while (!isExit) {
 		if (!XVideoThread::isStart) {
 			msleep(10);
 			continue;
 		}
+
 		// »ñÈ¡³öÀ´µÄ¿ÕÓàÒôÆµ»º´æ´óĞ¡²»¹»Ğ´Ò»Ö¡ÒôÆµÊı¾İ
-		if (XAudioPlay::get()->get_free_buffer_size() < 7680)
+		free = XAudioPlay::get()->get_free_buffer_size();
+		if (free < 4096)
 		{
-			cout << "aaaaaaaaaaaaaaa" << endl;
 			msleep(1);
 			continue;
 		}
@@ -32,22 +38,46 @@ void XVideoThread::run() {  // ÖØĞ´QTÏß³Ìº¯Êı(ÔÚµ÷ÓÃstartÖ®ºó»áÔÚÏß³ÌÖĞÔËĞĞÕâ¸öº
 			XFFmpeg::get()->get_buffered_frames();			
 		}
 		else {
+			while (videoPackets.size() > 0)
+			{
+				AVPacket* pktv = videoPackets.front();
+				vPts = XFFmpeg::get()->get_current_video_pts(pktv);
+				// Çé¿ö1£º×îÔçµÄÊÓÆµÖ¡Ê±¼ä´Á¶¼´óÓÚµ±Ç°ÒôÆµÖ¡Ê±¼ä´Á£¬ËµÃ÷×îÔçµÄÊÓÆµÖ¡¶¼ÔÚµ±Ç°ÒôÆµÖ¡µÄºóÃæ£¬ÄÇ¾Í
+				//        ²»²¥·ÅÊÓÆµ£¬ÈÃÊÓÆµÔÚ¶ÓÁĞÖĞÔÙµÈ´ıÒ»»á¶ù£¬µÈÒôÆµÖ¡µÄÊ±¼ä´ÁÔö´óµ½ÄÜÆ¥ÅäÊÓÆµÖ¡Ê±¼ä´Á
+				// Çé¿ö2£º×îÔçµÄÊÓÆµÖ¡Ê±¼ä´ÁĞ¡ÓÚµÈÓÚµ±Ç°ÒôÆµÖ¡µÄÊ±¼ä´ÁÊ±£¬²¥·Å¸ÃÊÓÆµÖ¡
+				if (vPts > aPts)  // Çé¿ö1£¬Ìø³öÑ­»·£¬²»²¥·ÅÊÓÆµ
+				{
+					break;
+				}
+				XFFmpeg::get()->decode(pktv);
+				cout << "^^^^^^ Play Vpts: " << XFFmpeg::get()->get_current_video_pts(pktv) << endl;
+				av_packet_unref(pktv);
+				if (pktv) av_packet_free(&pktv);
+				videoPackets.pop_front();
+			}
 			AVPacket* pkt = XFFmpeg::get()->read();
 			if (pkt == NULL || pkt->size <= 0) {
-				msleep(10);
+				msleep(1);
 				continue;
 			}
 			if (pkt->stream_index == XFFmpeg::get()->audioStream)
 			{
 				XFFmpeg::get()->decode(pkt);
+				aPts = XFFmpeg::get()->get_current_audio_pts();
+				cout << "Apts: " << aPts << endl;
 				av_packet_unref(pkt);
 				int len = XFFmpeg::get()->audio_convert((uint8_t* const)aout);
-				XAudioPlay::get()->write(aout, len);
-				continue;
+				if (len > 0) {
+					cout << "write len " << len << endl;
+					XAudioPlay::get()->write(aout, len);
+				}
 			}
 			else if (pkt->stream_index == XFFmpeg::get()->videoStream) {
-				XFFmpeg::get()->decode(pkt);
+				pkt2 = av_packet_alloc();
+				av_packet_ref(pkt2, pkt); // pkt2¹²ÏíÍ¬Ò»¸öÊı¾İ»º´æ¿Õ¼ä...
 				av_packet_unref(pkt);
+				videoPackets.push_back(pkt2);
+				cout << "###### Push Vpts: " << XFFmpeg::get()->get_current_video_pts(pkt2) << endl;
 			}
 			else{
 				cout << "[THREAD] Unknown stream ID: " << pkt->stream_index << endl;
@@ -56,7 +86,7 @@ void XVideoThread::run() {  // ÖØĞ´QTÏß³Ìº¯Êı(ÔÚµ÷ÓÃstartÖ®ºó»áÔÚÏß³ÌÖĞÔËĞĞÕâ¸öº
 		}
 		
 		if (XFFmpeg::get()->get_video_fps() > 0) {
-			msleep(1000 / XFFmpeg::get()->get_video_fps());
+			//msleep(1000 / XFFmpeg::get()->get_video_fps());
 		}
 		//¶ÔÓÚ½âÂë³öÀ´µÄAVFrameÀàĞÍµÄyuv¡£×¢Òâ£¬linesize¶ÔÓ¦µÄÊÇÒ»ĞĞµÄ³¤¶È£¬±ÈÈç²âÊÔÊÓÆµÊÇ1280x720£¬ÇÒ
 		//formatÊÇAV_PIX_FMT_YUV420P£¬Ôòlinesize [0]/[1]/[2]·Ö±ğ±íÊ¾Ò»ĞĞµÄyuv³¤¶È£¬Îª1280/640/640.

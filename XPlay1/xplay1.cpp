@@ -106,7 +106,7 @@ void XPlay1::timerEvent(QTimerEvent* e) {
     int64_t  totalVms = 0;
     char buf[24] = { 0 };
 
-    videoPts = XFFmpeg::get()->get_current_video_pts();
+    videoPts = XFFmpeg::get()->get_current_video_pts(NULL);
     min = (videoPts / 1000) / 60;
     sec = (videoPts / 1000) % 60;
 
