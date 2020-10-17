@@ -142,4 +142,10 @@ void XPlay1::resizeEvent(QResizeEvent* e) {
     ui.playTime->move(ui.progressSlider->x() + 20, ui.play->y() + 10);
     ui.separator->move(ui.playTime->x() + ui.playTime->width() - 11, ui.playTime->y()+2);
     ui.totalTime->move(ui.playTime->x() + ui.playTime->width() + 4, ui.playTime->y());
-}   
+}
+
+void XPlay1::closeEvent(QCloseEvent* e) {
+    XVideoThread::isStart = false;
+    XVideoThread::isExit = true;
+    QWidget::closeEvent(e);
+}
