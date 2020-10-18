@@ -1,5 +1,6 @@
 #include "XFFmpeg.h"
 #include "XVideoThread.h"
+#include "XAudioThread.h"
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -27,14 +28,14 @@ int XFFmpeg::open(const char* path) {
 		&opts  //参数设置，比如rtsp的延时时间，传NULL表示默认设置
 	);
 	// 打开成功的情况下，把关于这个文件的相关信息都更新好，便于外部使用
-	if (0 == re) {		
+	if (0 <= re) {	// 0表示成功，负数表示失败，但是有时会返回正数，所以这里暂且用判断 0<=re
 		re = create_decoder(ic);		
 		compute_duration_ms();
 		compute_video_fps();
 	}
 	mutex.unlock();
 
-	return re;
+	return re; // 暂且将re>=0表示成功
 }
 
 AVPacket* XFFmpeg::read() {
@@ -59,7 +60,7 @@ AVPacket* XFFmpeg::read() {
 		return NULL;
 	}
 	else {
-		cout <<"stream id: "<< packet->stream_index << ", " << (uint)packet <<", " << (uint)packet->data << endl;
+		//cout <<"stream id: "<< packet->stream_index << ", " << (uint)packet <<", " << (uint)packet->data << endl;
 		if (packet->stream_index == videoStream) {
 			if (packet->flags & AV_PKT_FLAG_KEY) {
 				//cout << "[PACKET] V --- read KEY packet! ---" << endl;
@@ -93,6 +94,7 @@ bool XFFmpeg::decode(const AVPacket* pkt) {
 	AVCodecContext* cc = NULL;
 	AVFrame* frame = NULL;
 
+	mutex.lock();
 	if (yuv == NULL) {
 		yuv = av_frame_alloc();
 	}
@@ -100,11 +102,20 @@ bool XFFmpeg::decode(const AVPacket* pkt) {
 		pcm = av_frame_alloc();
 	}
 
-	if (pkt->stream_index == videoStream) { cc = vc; frame = yuv; }
-	else if (pkt->stream_index == audioStream) { cc = ac; frame = pcm; }
-	else { cout << "[DECODE] stream index wrong: " << pkt->stream_index << endl; return false; }
+	if (pkt->stream_index == videoStream) { 
+		cc = vc; 
+		frame = yuv; 
+	}
+	else if (pkt->stream_index == audioStream) {
+		cc = ac; 
+		frame = pcm; 
+	}
+	else { 
+		mutex.unlock();
+		cout << "[DECODE] stream index wrong: " << pkt->stream_index << endl; 
+		return false; 
+	}
 
-	mutex.lock();
 	// 如果是视频包，pkt中的stream_index直接指明视频流的idx，音频包同理
 	// 发送packet到解码线程，只是将pkt扔给解码线程，几乎不占用CPU
 	// send NULL后调用多次receive可以取出所有缓冲帧
@@ -150,6 +161,8 @@ AVFrame* XFFmpeg::get_buffered_frames() {
 		if (AVERROR_EOF == re) {
 			XVideoThread::isStart = false;
 			XVideoThread::isExit = true;
+			XAudioThread::isStart = false;
+			XAudioThread::isExit = true;
 			set_send_flush_packet(false);
 			flag = true;
 		}
@@ -238,11 +251,13 @@ int XFFmpeg::audio_convert(uint8_t* const out) {
 	uint8_t* dataOut[1];
 	int re = 0;
 
+	mutex.lock();
 	if (!ic || !out || !pcm) {
+		mutex.unlock();
 		cout << "[AUDIO CONVERT] NULL PTR!" << endl;
 		return 0;
 	}
-	mutex.lock();
+	
 	if (!aSwrCtx) {
 		aSwrCtx = swr_alloc();
 		if (NULL == swr_alloc_set_opts(aSwrCtx,
@@ -315,12 +330,12 @@ void XFFmpeg::compute_current_pts(AVFrame* frame, int streamId) {
 	*temp = frame->best_effort_timestamp * rate * 1000;
 	mutex.unlock();
 	if (videoStream == streamId) {
-		cout << "[CURRENT PTS] V ------ best_effort_timestamp: " << frame->best_effort_timestamp << endl;
-		cout << "[CURRENT PTS] V frame->pts/temp: " << frame->pts << "/" << *temp << endl;
+		//cout << "[CURRENT PTS] V ------ best_effort_timestamp: " << frame->best_effort_timestamp << endl;
+		//cout << "[CURRENT PTS] V frame->pts/temp: " << frame->pts << "/" << *temp << endl;
 	}
 	else if (audioStream == streamId) {
-		cout << "[CURRENT PTS] A ------ best_effort_timestamp: " << frame->best_effort_timestamp << endl;
-		cout << "[CURRENT PTS] A frame->pts/temp: " << frame->pts << "/" << *temp << endl;
+		//cout << "[CURRENT PTS] A ------ best_effort_timestamp: " << frame->best_effort_timestamp << endl;
+		//cout << "[CURRENT PTS] A frame->pts/temp: " << frame->pts << "/" << *temp << endl;
 	}
 	else {
 	

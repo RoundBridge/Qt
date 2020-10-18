@@ -6,6 +6,8 @@
 #include "XVideoThread.h"
 #include "VideoWidget.h"
 #include "XAudioPlay.h"
+#include "XAudioThread.h"
+#include "XDistributeThread.h"
 
 using std::cout;
 using std::endl;
@@ -31,16 +33,44 @@ void XPlay1::set_play_state(int state) {
 
 void XPlay1::open() {
     int totalMs = 0, minutes = 0, seconds = 0;
+    int ret = 0;
     char buf[24] = { 0 };
 
     QString name = QFileDialog::getOpenFileName(this, QString::fromLocal8Bit("打开")); // 英文的话，第二个参数直接就是QString("Open File")
     if (name.isEmpty()) {
         return;
     }
+
+    XDistributeThread::get()->lock();
     this->setWindowTitle(name);
-    if (0 != XFFmpeg::get()->open(name.toLocal8Bit())) {
+    ret = XFFmpeg::get()->open(name.toLocal8Bit());
+    if (0 > ret) {
+        XDistributeThread::get()->unlock();
+        cout << "[XPLAY] Open " << name.toStdString().data() << " failed, " << XFFmpeg::get()->get_error(ret) << endl;
         QMessageBox::information(this, "ERROR: ", "open file failed");
         return;
+    }
+    else {
+        XVideoThread::bReset = true;
+        XAudioThread::bReset = true;
+        while (!XVideoThread::isExit);
+        XVideoThread::bReset = false;
+        while (!XAudioThread::isExit);
+        XAudioThread::bReset = false;
+        cout << "[XPLAY] Reset XDistributeThread!" << endl;
+        XDistributeThread::bReset = true;
+        XDistributeThread::get()->unlock();
+        // 让分发线程退出一下
+        while (!XDistributeThread::isExit);
+        // 重新开启分发线程
+        XDistributeThread::isExit = false;
+        XDistributeThread::bReset = false;
+        /*
+            需要等待大概10毫秒左右，否则前一个视频没放完就新开一个视频时会无法启动
+            XDistributeThread，也即下面的代码XDistributeThread::get()->start()不生效
+        */
+        QThread::msleep(10);  
+        XDistributeThread::get()->start();
     }
 
     XAudioPlay::get()->sampleRate = XFFmpeg::get()->sampleRate;
@@ -54,9 +84,16 @@ void XPlay1::open() {
     sprintf(buf, "%03d:%02d", minutes, seconds);  // 分别以3位和2位显示分钟和秒数
     ui.totalTime->setText(buf);
 
+    // 视频线程
     XVideoThread::isStart = true;
     XVideoThread::isExit = false;
     XVideoThread::get()->start();
+
+    // 音频线程
+    XAudioThread::isStart = true;
+    XAudioThread::isExit = false;
+    XAudioThread::get()->start();
+
     set_play_state(1);  // 进入播放状态
     ui.play->setStyleSheet(PAUSE);  // 在播放状态下显示暂停按钮
 
@@ -68,11 +105,13 @@ void XPlay1::play() {
         set_play_state(2);
         ui.play->setStyleSheet(PLAY);  // 在暂停状态下显示播放按钮
         XVideoThread::isStart = false;
+        XAudioThread::isStart = false;
     }
     else if(get_play_state() == 2){  // 当前是暂停状态，点击后进入播放状态
         set_play_state(1);
         ui.play->setStyleSheet(PAUSE);  // 在播放状态下显示暂停按钮
         XVideoThread::isStart = true;
+        XAudioThread::isStart = true;
     }
 }
 
@@ -89,10 +128,10 @@ void XPlay1::sliderRelease() {
     bool re = XFFmpeg::get()->seek(pos);
     if (re) {
         ui.progressSlider->setValue(place);
-        cout << "[PLAY] Move slider to " << place << endl;
+        cout << "[XPLAY] Move slider to " << place << endl;
     }
     else {
-        cout << "[PLAY] ERR: seek failed!" << endl;
+        cout << "[XPLAY] ERR: seek failed!" << endl;
     }
     return;
 }
@@ -120,7 +159,7 @@ void XPlay1::timerEvent(QTimerEvent* e) {
             place = videoPts * maxSliderBar / totalVms;  // videoPts * maxSliderBar如果是32位类型变量，则对于大的视频会溢出
             ui.progressSlider->setValue(place);
             //if (XVideoThread::isStart) {
-            //    cout << "[PLAY] Set slider to " << place << ", videoPts/totalVms/maxSliderBar is " << videoPts << "/" << totalVms << "/" << maxSliderBar << endl;
+            //    cout << "[XPLAY] Set slider to " << place << ", videoPts/totalVms/maxSliderBar is " << videoPts << "/" << totalVms << "/" << maxSliderBar << endl;
             //}
         }
     }
@@ -128,7 +167,7 @@ void XPlay1::timerEvent(QTimerEvent* e) {
         ui.progressSlider->setValue(ui.progressSlider->maximum());
     }
     else {
-        //cout << "[PLAY] WRN: Total duration is 0, Set slider to 0!" << endl;
+        //cout << "[XPLAY] WRN: Total duration is 0, Set slider to 0!" << endl;
         ui.progressSlider->setValue(0);
     }
 }
@@ -147,5 +186,8 @@ void XPlay1::resizeEvent(QResizeEvent* e) {
 void XPlay1::closeEvent(QCloseEvent* e) {
     XVideoThread::isStart = false;
     XVideoThread::isExit = true;
+    XAudioThread::isStart = false;
+    XAudioThread::isExit = true;
+    XDistributeThread::isExit = true;
     QWidget::closeEvent(e);
 }
