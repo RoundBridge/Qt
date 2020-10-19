@@ -72,8 +72,17 @@ void VideoWidget::paintEvent(QPaintEvent* e) {	// 重载窗口绘制事件函数
 }
 
 void VideoWidget::timerEvent(QTimerEvent* e) {		// 重载定时器事件函数（界面刷新通过定时器进行）
-	//this->update();
-	this->repaint();  // 这两种方式都可以
+	this->update();
+	//this->repaint();  // 这两种方式都可以
+	/*
+	repaint():被调用之后，立即执行重绘，因此repaint是最快的，紧急情况下需要立刻重绘的可以使用repaint()。
+	但是容易引起Recursive repaint，特别是调用repaint的函数不能放到paintEvent中调用，否则会造成死循环。
+	update():跟repaint()比较，update则更加有优越性。update()调用之后并不是立即重绘，而是将重绘事件放入
+	主消息循环中，由main的eventloop来统一调度的(其实也是比较快的)。update在调用paintEvent之前，还做了很
+	多优化，如果update被调用了很多次，最后这些update会合并到一个大的重绘事件加入到消息队列，最后只有这
+	个大的update被执行一次。同时也避免了repaint()中所提到的死循环。因此，一般情况下，调用update就够了，
+	跟repaint()比起来，update是推荐使用的。
+	*/
 }
 
 VideoWidget:: ~VideoWidget() {
