@@ -94,6 +94,10 @@ bool XFFmpeg::decode(const AVPacket* pkt) {
 	AVCodecContext* cc = NULL;
 	AVFrame* frame = NULL;
 
+	if (!pkt || pkt->size <= 0 || !pkt->data) {
+		return false;
+	}
+
 	mutex.lock();
 	if (yuv == NULL) {
 		yuv = av_frame_alloc();
@@ -391,23 +395,32 @@ void XFFmpeg::compute_video_fps() {
 bool XFFmpeg::seek(float pos) {
 	int64_t stamp = 0;
 	int re = 0;
-	
+
+	mutex.lock();
 	if (!ic) {
+		mutex.unlock();
 		return false;
 	}
-	mutex.lock();
+	/*
+	 * The set of streams, the detected duration, stream parameters and codecs do
+	 * not change when calling this function. If you want a complete reset, it's
+	 * better to open a new AVFormatContext.
+	 */
+	avformat_flush(ic);
 	stamp = (float)ic->streams[videoStream]->duration * pos;	
 	re = av_seek_frame(ic, videoStream, stamp, AVSEEK_FLAG_FRAME|AVSEEK_FLAG_BACKWARD);
 	//avcodec_flush_buffers(ic->streams[videoStream]->codec);  // codec是废弃属性，使用会引发错误
-	avcodec_flush_buffers(vc);
-	mutex.unlock();
+	//avcodec_flush_buffers(vc);  // 这段注释掉之后发现在拖动时没有花屏了？？？！！！
+	
 	if (re >= 0)
 	{
 		currentVPtsMs = totalVms * pos;  // 先对拖动后的视频pts进行更新一下，防止slider bar回跳
+		mutex.unlock();
 		return true;
 	}
 	else
 	{
+		mutex.unlock();
 		cout << "[SEEK] av_seek_frame error: " << get_error(re) << endl;
 		return false;
 	}	
@@ -418,12 +431,41 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 
 	if (!ic) {
 		cout << "[CREATE DECODER] Please open first!" << endl;
-		return -5;
+		return false;
 	}
+	cout << "[CREATE DECODER] Total stream numbers: " << ic->nb_streams << endl;
+#if 1
+	//获取音视频流信息（遍历、函数获取）
+	for (int i = 0; i < ic->nb_streams; i++) {
+		AVStream* as = ic->streams[i];
 
+		if (as->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+			audioStream = i;
+			cout << i << " 音频信息" << endl;
+			cout << "  - sample rate: " << as->codecpar->sample_rate << endl;
+			cout << "  - channels: " << as->codecpar->channels << endl;
+			cout << "  - format: " << as->codecpar->format << endl;  // 音频 AVSampleFormat 枚举类型，比如unsigned 8 bits planar，signed 16 bits planar，float planar等等
+			cout << "  - codec_id: " << as->codecpar->codec_id << endl;  // 比如AV_CODEC_ID_AAC，AV_CODEC_ID_MP3等等
+			cout << "  - audio frame size: " << as->codecpar->frame_size << endl;  //一帧数据  单通道样本数（假设为1024）
+			//如果是双通道（as->codecpar->channels == 2），则一帧数据frame size是as->codecpar->frame_size * 2 * byte per sample = 1024*2*2(假设为16位)=4096字节
+			//则音频帧率 fps=as->codecpar->sample_rate*2/frame size = 48000*2/4096 = 23.4375，跟视频帧率不一定相等
+		}
+		else if (as->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+			videoStream = i;
+			cout << i << " 视频信息" << endl;
+			cout << "  - width: " << as->codecpar->width << endl;
+			cout << "  - height: " << as->codecpar->height << endl;
+			cout << "  - format: " << as->codecpar->format << endl;  // 视频 AVPixelFormat 枚举类型
+			cout << "  - codec_id: " << as->codecpar->codec_id << endl;  // 比如AV_CODEC_ID_H264等等
+			cout << "  - video frame size: " << as->codecpar->frame_size << endl;  // 视频这个值为0
+		}
+	}
+#else
 	//函数获取videoStream和audioStream，然后代入到ic->streams[i]中获取各个流的信息，就不用遍历了
 	videoStream = av_find_best_stream(ic, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);  // 倒数第二个参数传NULL是因为封装和解码隔离开不耦合？
 	audioStream = av_find_best_stream(ic, AVMEDIA_TYPE_AUDIO, -1, -1, NULL, 0);
+#endif
+
 	cout << "[CREATE DECODER] videoStream = " << videoStream << endl;
 	cout << "[CREATE DECODER] audioStream = " << audioStream << endl;
 
@@ -432,7 +474,7 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 	AVCodec* vcodec = avcodec_find_decoder(ic->streams[videoStream]->codecpar->codec_id);
 	if (!vcodec) {
 		cout << "[CREATE DECODER] Can't find the video codec id " << ic->streams[videoStream]->codecpar->codec_id << endl;
-		return -1;
+		return false;
 	}
 	else {
 		cout << "[CREATE DECODER] Find the vcodec " << ic->streams[videoStream]->codecpar->codec_id << endl;
@@ -455,8 +497,9 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 	//打开解码器上下文
 	re = avcodec_open2(vc, 0, 0);
 	if (0 != re) {
+		avcodec_free_context(&vc);
 		cout << "[CREATE DECODER] avcodec_open2 failed: " << get_error(re) << endl;
-		return -2;
+		return false;
 	}
 	else {
 		cout << "[CREATE DECODER] video - avcodec_open2 success!" << endl;
@@ -467,7 +510,7 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 	AVCodec* acodec = avcodec_find_decoder(ic->streams[audioStream]->codecpar->codec_id);
 	if (!acodec) {
 		cout << "[CREATE DECODER] Can't find the audio codec id " << ic->streams[audioStream]->codecpar->codec_id << endl;
-		return -3;
+		return false;
 	}
 	else {
 		cout << "[CREATE DECODER] Find the acodec " << ic->streams[audioStream]->codecpar->codec_id << endl;
@@ -489,9 +532,10 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 		or equal to the previously passed codec.
 	 */
 	re = avcodec_open2(ac, 0, 0);
-	if (0 != re) {		
+	if (0 != re) {
+		avcodec_free_context(&ac);
 		cout << "[CREATE DECODER] avcodec_open2 failed: " << get_error(re) << endl;
-		return -4;
+		return false;
 	}
 	else {
 		cout << "[CREATE DECODER] audio - avcodec_open2 success!" << endl;
@@ -507,12 +551,12 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 				break;
 			default:
 				cout << "[CREATE DECODER] Error sample fmt " << ac->sample_fmt << endl;
-				return -5;
+				return false;
 		}
 		cout << "[CREATE DECODER] sampleRate/channel/sampleSize " << sampleRate << "/" << channel << "/" << sampleSize << endl;
 	}
 
-	return 0;
+	return true;
 }
 
 /*
@@ -579,8 +623,14 @@ void XFFmpeg::clean() {
 void XFFmpeg::close() {
 	mutex.lock();
 	if (ic) avformat_close_input(&ic);
-	if (vc) avcodec_free_context(&vc);
-	if (ac) avcodec_free_context(&ac);
+	if (vc) { 
+		avcodec_close(vc);
+		avcodec_free_context(&vc); 
+	}
+	if (ac) { 
+		avcodec_close(ac);
+		avcodec_free_context(&ac);
+	}
 	if (vSwsCtx) { 
 		sws_freeContext(vSwsCtx); 
 		vSwsCtx = NULL;

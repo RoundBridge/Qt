@@ -88,6 +88,7 @@ void XDistributeThread::run() {
 				av_packet_unref(pkt2);
 			}
 			av_packet_unref(pkt);
+			//av_packet_free(&pkt);  // Ö±½Ófree»á¹Òµô
 		}
 		XDistributeThread::get()->unlock();
 	}
