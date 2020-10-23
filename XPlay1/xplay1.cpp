@@ -16,6 +16,21 @@ using std::endl;
 #define PLAY "QPushButton:hover{border-image:url(:/XPlay1/res/play_hot.png);}\nQPushButton:!hover{border-image:url(:/XPlay1/res/play.png);}"
 static bool isSliderPressed = false;
 
+QReadWriteLock XPlay1::rwlock;
+bool XPlay1::bSeek = false;
+
+void XPlay1::rlock() {
+    rwlock.lockForRead();
+}
+
+void XPlay1::wlock() {
+    rwlock.lockForWrite();
+}
+
+void XPlay1::unlock() {
+    rwlock.unlock();
+}
+
 XPlay1::XPlay1(QWidget *parent)
     : QWidget(parent)
 {
@@ -35,7 +50,7 @@ void XPlay1::open() {
     int totalMs = 0, minutes = 0, seconds = 0;
     int ret = 0;
     char buf[24] = { 0 };
-
+    //char* url = "rtmp://58.200.131.2:1935/livetv/cctv13";
     QString name = QFileDialog::getOpenFileName(this, QString::fromLocal8Bit("打开")); // 英文的话，第二个参数直接就是QString("Open File")
     if (name.isEmpty()) {
         return;
@@ -44,6 +59,7 @@ void XPlay1::open() {
     XDistributeThread::get()->lock();
     this->setWindowTitle(name);
     ret = XFFmpeg::get()->open(name.toLocal8Bit());
+    //ret = XFFmpeg::get()->open(url);
     if (0 > ret) {
         XDistributeThread::get()->unlock();
         cout << "[XPLAY] Open " << name.toStdString().data() << " failed, " << XFFmpeg::get()->get_error(ret) << endl;
@@ -123,16 +139,22 @@ void XPlay1::sliderRelease() {
     float pos = 0.0;
     int place = ui.progressSlider->value();
 
+    XPlay1::bSeek = true;
     isSliderPressed = false;
     pos = (float)place / (float)(ui.progressSlider->maximum() + 1);
+    XPlay1::wlock();
     bool re = XFFmpeg::get()->seek(pos);
     if (re) {
+        XDistributeThread::get()->clear_packet_list(XDistributeThread::get()->get_video_list());
+        XDistributeThread::get()->clear_packet_list(XDistributeThread::get()->get_audio_list());
         ui.progressSlider->setValue(place);
         cout << "[XPLAY] Move slider to " << place << endl;
     }
     else {
         cout << "[XPLAY] ERR: seek failed!" << endl;
     }
+    XPlay1::unlock();
+    XPlay1::bSeek = false;
     return;
 }
 

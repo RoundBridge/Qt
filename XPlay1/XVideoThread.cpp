@@ -23,27 +23,36 @@ void XVideoThread::run() {  // ÖØÐ´QTÏß³Ìº¯Êý(ÔÚµ÷ÓÃstartÖ®ºó»áÔÚÏß³ÌÖÐÔËÐÐÕâ¸öº
 		if (!XVideoThread::isStart) {
 			msleep(10);
 			continue;
-		}		
+		}
+		XPlay1::rlock();
 		if (XDistributeThread::get()->get_video_list()->size() > 0)
 		{
 			//cout << "[VIDEO THREAD] ------ Video thread running! ------" << endl;
 			AVPacket* pktv = XDistributeThread::get()->get_video_list()->front();
 			vPts = XFFmpeg::get()->get_current_video_pts(pktv);
+			aPts = XFFmpeg::get()->get_current_audio_pts();
 			// Çé¿ö1£º×îÔçµÄÊÓÆµÖ¡Ê±¼ä´Á¶¼´óÓÚµ±Ç°ÒôÆµÖ¡Ê±¼ä´Á£¬ËµÃ÷×îÔçµÄÊÓÆµÖ¡¶¼ÔÚµ±Ç°ÒôÆµÖ¡µÄºóÃæ£¬ÄÇ¾Í
 			//        ²»²¥·ÅÊÓÆµ£¬ÈÃÊÓÆµÔÚ¶ÓÁÐÖÐÔÙµÈ´ýÒ»»á¶ù£¬µÈÒôÆµÖ¡µÄÊ±¼ä´ÁÔö´óµ½ÄÜÆ¥ÅäÊÓÆµÖ¡Ê±¼ä´Á
 			// Çé¿ö2£º×îÔçµÄÊÓÆµÖ¡Ê±¼ä´ÁÐ¡ÓÚµÈÓÚµ±Ç°ÒôÆµÖ¡µÄÊ±¼ä´ÁÊ±£¬²¥·Å¸ÃÊÓÆµÖ¡
-			while (vPts > aPts) {
+			while (vPts > aPts && !XPlay1::bSeek && !bReset && isStart && !isExit) {
 				/*
 					´Ë´¦ÓÃÒôÆµÀ´Í¬²½ÊÓÆµ£¬Ò²¼´½«ÊÓÆµ°´ÕÕÒôÆµÊ±¼ä´ÁÀ´½øÐÐ²¥·Å
 					ÒòÎªÒôÆµÔÚ²ÉÑùÂÊ¡¢Í¨µÀÊý¡¢Ñù±¾µãÎ»¿íÈ·¶¨µÄÇé¿öÏÂ£¬²¥·ÅËÙ¶ÈÊÇ¹Ì¶¨
 					µÄ£¬¶øÊÓÆµÖ¡ÓëÖ¡Ö®¼äÐèÒªÓÐ¼ä¸ô£¬Õâ¸ö¼ä¸ôÈç¹ûÍ¨¹ýsleepÀ´ÊµÏÖ¾Í²»×¼
 					È·£¬ÇÒÆ«²î»áÀÛ»ý£¬ËùÒÔÓÃÒôÆµÀ´Í¬²½ÊÓÆµ
 				*/
-				cout << "[VIDEO THREAD] ------ vPts " << vPts << "ms, aPts " << aPts << " ms ------" << endl;
-				msleep(1);
+				//cout << "[VIDEO THREAD] ------ vPts " << vPts << "ms, aPts " << aPts << " ms ------" << endl;
+				msleep(5);
 				aPts = XFFmpeg::get()->get_current_audio_pts();
 			}
-
+			if (isExit || bReset) {
+				XPlay1::unlock();
+				break;
+			}
+			if (!isStart) {
+				XPlay1::unlock();
+				continue;
+			}
 			XFFmpeg::get()->decode(pktv);
 			av_packet_unref(pktv);
 			if (pktv) av_packet_free(&pktv);
@@ -56,6 +65,7 @@ void XVideoThread::run() {  // ÖØÐ´QTÏß³Ìº¯Êý(ÔÚµ÷ÓÃstartÖ®ºó»áÔÚÏß³ÌÖÐÔËÐÐÕâ¸öº
 		//formatÊÇAV_PIX_FMT_YUV420P£¬Ôòlinesize [0]/[1]/[2]·Ö±ð±íÊ¾Ò»ÐÐµÄyuv³¤¶È£¬Îª1280/640/640.
 	    //¶ÔÓÚÒôÆµ£¬ÔòÊÇÒ»Ö¡ÒôÆµµÄ×Ö½ÚÊý£¬Èç¹ûÒôÆµÊÇfloatÐÍ£¨AV_SAMPLE_FMT_S32P£©ÇÒÊÇË«Í¨µÀµÄ£¬Ôò
 	    //linesize = 4 * 2 * as->codecpar->frame_size(as->codecpar->frame_size±íÊ¾Ò»Ö¡Êý¾Ý£¬µ¥Í¨µÀÑù±¾Êý)
+		XPlay1::unlock();
 	}
 	isExit = true;
 	cout << "[VIDEO THREAD] ------ Video thread exit! ------" << endl;

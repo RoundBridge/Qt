@@ -40,11 +40,12 @@ int XFFmpeg::open(const char* path) {
 
 AVPacket* XFFmpeg::read() {
 	int re = 0;
+
+	mutex.lock();
 	// read函数里面不负责对packet的释放操作，需要外部释放
 	if (packet == NULL) {
 		packet = av_packet_alloc();
 	}
-	mutex.lock();
 	if (!ic) {
 		mutex.unlock();
 		cout << "[PACKET] Please open first!" << endl;

@@ -51,7 +51,7 @@ void XDistributeThread::run() {
 		/* 不要让队列里有太多的包缓存着 */
 		if (videolist.size() >= 5 && audiolist.size() >= 5) {
 			XDistributeThread::get()->unlock();
-			msleep(5);
+			msleep(10);
 			continue;
 		}
 		if (XFFmpeg::get()->send_flush_packet()) {
@@ -74,14 +74,14 @@ void XDistributeThread::run() {
 			pkt2 = av_packet_alloc();
 			av_packet_ref(pkt2, pkt); // pkt2共享同一个数据缓存空间...
 			if (pkt->stream_index == XFFmpeg::get()->videoStream) {
+				cout << "[DISTRIBUTE THREAD] Push V " << numV << ", pts " << XFFmpeg::get()->get_current_video_pts(pkt2) << ", buffered vPkt " << videolist.size() << endl;
 				videolist.push_back(pkt2);
-				numV++;
-				cout << "[DISTRIBUTE THREAD] Push V " << numV << ", pts " << XFFmpeg::get()->get_current_video_pts(pkt2) << endl;
+				numV++;				
 			}
 			else if (pkt->stream_index == XFFmpeg::get()->audioStream) {
+				cout << "[DISTRIBUTE THREAD] Push A " << numA << ", pts " << XFFmpeg::get()->get_current_video_pts(pkt2) << ", buffered aPkt " << audiolist.size() << endl;
 				audiolist.push_back(pkt2);
-				numA++;
-				cout << "[DISTRIBUTE THREAD] Push A " << numA << ", pts " << XFFmpeg::get()->get_current_video_pts(pkt2) << endl;
+				numA++;				
 			}
 			else {
 				cout << "[DISTRIBUTE THREAD] Unknown stream ID: " << pkt->stream_index << endl;
@@ -100,22 +100,26 @@ void XDistributeThread::run() {
 	cout << "[DISTRIBUTE THREAD] ------ Distribute thread exit! ------" << endl;
 }
 
-void XDistributeThread::close() {
-	AVPacket* pktv;
-	AVPacket* pkta;
+void XDistributeThread::clear_packet_list(list<AVPacket*>* list) {
+	AVPacket* pkt;
 
-	while (videolist.size() > 0) {
-		pktv = videolist.front();
-		av_packet_unref(pktv);
-		if (pktv) av_packet_free(&pktv);
-		videolist.pop_front();
+	if (!list) {
+		return;
 	}
-	while (audiolist.size() > 0) {
-		pkta = audiolist.front();
-		av_packet_unref(pkta);
-		if (pkta) av_packet_free(&pkta);
-		audiolist.pop_front();
+	
+	while (list->size() > 0) {
+		pkt = list->front();
+		av_packet_unref(pkt);
+		av_packet_free(&pkt);
+		list->pop_front();
 	}
+	
+	return;
+}
+
+void XDistributeThread::close() {
+	clear_packet_list(&videolist);
+	clear_packet_list(&audiolist);
 	return;
 }
 

@@ -17,6 +17,7 @@ public:
 	void run();  // 重写QT线程函数(在调用start之后会在线程中运行这个函数)
 	list<AVPacket*>* get_video_list();
 	list<AVPacket*>* get_audio_list();
+	void clear_packet_list(list<AVPacket*>* list);
 	void close();
 	void lock();
 	void unlock();

@@ -2,6 +2,7 @@
 #include "XDistributeThread.h"
 #include "XAudioPlay.h"
 #include "XFFmpeg.h"
+#include "xplay1.h"
 #include <iostream>
 #include <QTime>
 
@@ -29,10 +30,10 @@ void XAudioThread::run() {
 		free = XAudioPlay::get()->get_free_buffer_size();
 		if (free < 4096)
 		{
-			msleep(1);
+			msleep(5);
 			continue;
 		}
-
+		XPlay1::rlock();
 		if (XDistributeThread::get()->get_audio_list()->size() > 0)
 		{
 			//cout << "[AUDIO THREAD] ------ Audio thread running! ------" << endl;
@@ -48,8 +49,9 @@ void XAudioThread::run() {
 			}
 		}
 		else {
-			msleep(1);
+			msleep(5);
 		}
+		XPlay1::unlock();
 	}
 	isExit = true;
 	cout << "[AUDIO THREAD] ------ Audio thread exit! ------" << endl;

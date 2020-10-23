@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QReadWriteLock>
 #include <QtWidgets/QWidget>
 #include "ui_xplay1.h"
 
@@ -14,6 +15,11 @@ public:
     void closeEvent(QCloseEvent* e);
     int get_play_state();
     void set_play_state(int);
+    static void rlock();
+    static void wlock();
+    static void unlock();
+    static QReadWriteLock rwlock;
+    static bool bSeek;
 
 public slots:
     void open();
