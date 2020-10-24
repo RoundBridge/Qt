@@ -142,6 +142,12 @@ void XPlay1::sliderRelease() {
     XPlay1::bSeek = true;
     isSliderPressed = false;
     pos = (float)place / (float)(ui.progressSlider->maximum() + 1);
+    /*
+        如果不加这个锁，那么下面seek后有可能XDistributeThread立马执行，读出pkt放到队列里面，等到
+        这里继续运行下去又把队列清空了，于是就可能产生花屏（因为按照AVSEEK_FLAG_FRAME方式seek后
+        第一次放进去的是I帧）
+    */
+    XDistributeThread::get()->lock();
     XPlay1::wlock();
     bool re = XFFmpeg::get()->seek(pos);
     if (re) {
@@ -154,6 +160,7 @@ void XPlay1::sliderRelease() {
         cout << "[XPLAY] ERR: seek failed!" << endl;
     }
     XPlay1::unlock();
+    XDistributeThread::get()->unlock();
     XPlay1::bSeek = false;
     return;
 }

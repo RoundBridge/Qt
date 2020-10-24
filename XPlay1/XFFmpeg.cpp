@@ -411,12 +411,19 @@ bool XFFmpeg::seek(float pos) {
 	stamp = (float)ic->streams[videoStream]->duration * pos;	
 	re = av_seek_frame(ic, videoStream, stamp, AVSEEK_FLAG_FRAME|AVSEEK_FLAG_BACKWARD);
 	//avcodec_flush_buffers(ic->streams[videoStream]->codec);  // codec是废弃属性，使用会引发错误
-	//avcodec_flush_buffers(vc);  // 这段注释掉之后发现在拖动时没有花屏了？？？！！！
+	/*
+		如果sliderRelease里面没有加XDistributeThread::get()->lock()这把锁，同时呢下面这行代码又注释掉了，
+		则歪打正着，不会有花屏现象，因为队列中清掉的pkt所起的作用正好被缓存在解码器buffer中的帧弥补了，
+		所以不会花屏，但是会引起时间戳回跳，所以正确的方式应该是在sliderRelease里面加XDistributeThread::get()->lock()
+		这把锁，同时运行下面这行代码。
+	*/
+	avcodec_flush_buffers(vc);  
 	
 	if (re >= 0)
 	{
 		currentVPtsMs = totalVms * pos;  // 先对拖动后的视频pts进行更新一下，防止slider bar回跳
 		mutex.unlock();
+		cout << "[SEEK] vPts after seek: " << currentVPtsMs << endl;
 		return true;
 	}
 	else

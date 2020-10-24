@@ -74,12 +74,12 @@ void XDistributeThread::run() {
 			pkt2 = av_packet_alloc();
 			av_packet_ref(pkt2, pkt); // pkt2共享同一个数据缓存空间...
 			if (pkt->stream_index == XFFmpeg::get()->videoStream) {
-				cout << "[DISTRIBUTE THREAD] Push V " << numV << ", pts " << XFFmpeg::get()->get_current_video_pts(pkt2) << ", buffered vPkt " << videolist.size() << endl;
+				//cout << "[DISTRIBUTE THREAD] Push V " << numV << ", pts " << XFFmpeg::get()->get_current_video_pts(pkt2) << ", buffered vPkt " << videolist.size() << endl;
 				videolist.push_back(pkt2);
 				numV++;				
 			}
 			else if (pkt->stream_index == XFFmpeg::get()->audioStream) {
-				cout << "[DISTRIBUTE THREAD] Push A " << numA << ", pts " << XFFmpeg::get()->get_current_video_pts(pkt2) << ", buffered aPkt " << audiolist.size() << endl;
+				//cout << "[DISTRIBUTE THREAD] Push A " << numA << ", pts " << XFFmpeg::get()->get_current_video_pts(pkt2) << ", buffered aPkt " << audiolist.size() << endl;
 				audiolist.push_back(pkt2);
 				numA++;				
 			}

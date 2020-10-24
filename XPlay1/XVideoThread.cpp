@@ -49,7 +49,7 @@ void XVideoThread::run() {  // ÖØĞ´QTÏß³Ìº¯Êı(ÔÚµ÷ÓÃstartÖ®ºó»áÔÚÏß³ÌÖĞÔËĞĞÕâ¸öº
 				XPlay1::unlock();
 				break;
 			}
-			if (!isStart) {
+			if (!isStart || XPlay1::bSeek) {
 				XPlay1::unlock();
 				continue;
 			}
