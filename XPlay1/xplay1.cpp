@@ -193,7 +193,7 @@ void XPlay1::timerEvent(QTimerEvent* e) {
         }
     }
     else if (XVideoThread::isExit) {
-        ui.progressSlider->setValue(ui.progressSlider->maximum());
+        ui.progressSlider->setValue(0);
     }
     else {
         //cout << "[XPLAY] WRN: Total duration is 0, Set slider to 0!" << endl;
