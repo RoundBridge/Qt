@@ -4,6 +4,7 @@
 #include <iostream>
 #include "stdio.h"
 #include "XVideoThread.h"
+#include "xplay1.h"
 
 using std::cout;
 using std::endl;
@@ -48,13 +49,15 @@ bool VideoWidget::resize_image_buffer() {
 void VideoWidget::paintEvent(QPaintEvent* e) {	// 重载窗口绘制事件函数	
 	QPainter painter;
 
-	if (XVideoThread::isExit) {
+	if (XVideoThread::isExit || XPlay1::bSeek) {
 		return;
 	}
 	if (true != resize_image_buffer()) {
 		return;
 	}
-	XFFmpeg::get()->video_convert(image->bits(), width(), height(), AV_PIX_FMT_BGRA);
+	if (true != XFFmpeg::get()->video_convert(image->bits(), width(), height(), AV_PIX_FMT_BGRA)) {
+		return;
+	}
 	// 调试用（保存解码出来的第100帧，看数据是否正确）
 	if (count == 100) {
 		//fp = fopen("argb.data", "wb");
