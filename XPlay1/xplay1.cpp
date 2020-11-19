@@ -220,3 +220,12 @@ void XPlay1::closeEvent(QCloseEvent* e) {
     XDistributeThread::isExit = true;
     QWidget::closeEvent(e);
 }
+
+void XPlay1::mouseDoubleClickEvent(QMouseEvent* e) {
+    if (isFullScreen()) {
+        this->showNormal();
+    }
+    else {
+        this->showFullScreen();
+    }
+}
