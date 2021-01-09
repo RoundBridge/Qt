@@ -246,7 +246,11 @@ bool XFFmpeg::video_convert(uint8_t* const out, int out_w, int out_h, AVPixelFor
 			data,				//输出数据地址
 			lines				//输出行跨度
 		);
-		//cout << "[CONVERT] the height of the output is: " << re << endl;		
+		if (re != out_h) {
+			cout << "[VIDEO CONVERT] the height of the output is: " << re << ", the needed height is " << out_h << endl;
+			mutex.unlock();
+			return false;
+		}			
 	}
 	mutex.unlock();
 	return true;
@@ -257,7 +261,7 @@ int XFFmpeg::audio_convert(uint8_t* const out) {
 	int re = 0;
 
 	mutex.lock();
-	if (!ic || !out || !pcm) {
+	if (!ic || !ac || !out || !pcm) {
 		mutex.unlock();
 		cout << "[AUDIO CONVERT] NULL PTR!" << endl;
 		return 0;
@@ -350,17 +354,21 @@ void XFFmpeg::compute_current_pts(AVFrame* frame, int streamId) {
 
 void XFFmpeg::compute_duration_ms() {
 	if (ic) {
-		if (ic->streams[videoStream]->duration == AV_NOPTS_VALUE) {
-			totalVms = ic->duration / (AV_TIME_BASE / 1000);  // AV_TIME_BASE表示1秒有AV_TIME_BASE个单位
+		if (videoStream >= 0) {
+			if (ic->streams[videoStream]->duration == AV_NOPTS_VALUE) {
+				totalVms = ic->duration / (AV_TIME_BASE / 1000);  // AV_TIME_BASE表示1秒有AV_TIME_BASE个单位
+			}
+			else {
+				totalVms = 1000 * ic->streams[videoStream]->duration * ic->streams[videoStream]->time_base.num / ic->streams[videoStream]->time_base.den;
+			}
 		}
-		else {
-			totalVms = 1000 * ic->streams[videoStream]->duration * ic->streams[videoStream]->time_base.num / ic->streams[videoStream]->time_base.den;
-		}
-		if (ic->streams[audioStream]->duration == AV_NOPTS_VALUE) {
-			totalAms = ic->duration / (AV_TIME_BASE / 1000);  // AV_TIME_BASE表示1秒有AV_TIME_BASE个单位
-		}
-		else {
-			totalAms = 1000 * ic->streams[audioStream]->duration * ic->streams[audioStream]->time_base.num / ic->streams[audioStream]->time_base.den;
+		if (audioStream >= 0) {
+			if (ic->streams[audioStream]->duration == AV_NOPTS_VALUE) {
+				totalAms = ic->duration / (AV_TIME_BASE / 1000);  // AV_TIME_BASE表示1秒有AV_TIME_BASE个单位
+			}
+			else {
+				totalAms = 1000 * ic->streams[audioStream]->duration * ic->streams[audioStream]->time_base.num / ic->streams[audioStream]->time_base.den;
+			}
 		}
 	}
 	else {
@@ -370,8 +378,8 @@ void XFFmpeg::compute_duration_ms() {
 	cout << "[DURATION] There ara " << ic->nb_streams << " streams: " << endl;
 	cout << "[DURATION] TotalVms: " << totalVms << " ms" << endl;
 	cout << "[DURATION] TotalAms: " << totalAms << " ms" << endl;
-	cout << "[DURATION] In stream, Vduration/num/den: " << ic->streams[videoStream]->duration << "/" << ic->streams[videoStream]->time_base.num << "/" << ic->streams[videoStream]->time_base.den << endl;
-	cout << "[DURATION] In stream, Aduration/num/den: " << ic->streams[audioStream]->duration << "/" << ic->streams[audioStream]->time_base.num << "/" << ic->streams[audioStream]->time_base.den << endl;
+	if (videoStream >= 0)cout << "[DURATION] In stream, Vduration/num/den: " << ic->streams[videoStream]->duration << "/" << ic->streams[videoStream]->time_base.num << "/" << ic->streams[videoStream]->time_base.den << endl;
+	if (audioStream >= 0)cout << "[DURATION] In stream, Aduration/num/den: " << ic->streams[audioStream]->duration << "/" << ic->streams[audioStream]->time_base.num << "/" << ic->streams[audioStream]->time_base.den << endl;
 	cout << "[DURATION] In ic,	   duration " << ic->duration << endl; 
 
 	return;
@@ -442,7 +450,7 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 		return false;
 	}
 	cout << "[CREATE DECODER] Total stream numbers: " << ic->nb_streams << endl;
-#if 1
+#if 0
 	//获取音视频流信息（遍历、函数获取）
 	for (int i = 0; i < ic->nb_streams; i++) {
 		AVStream* as = ic->streams[i];
@@ -477,79 +485,82 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 	cout << "[CREATE DECODER] videoStream = " << videoStream << endl;
 	cout << "[CREATE DECODER] audioStream = " << audioStream << endl;
 
-	/************************************ 视频解码器部分 ************************************/
-	//找到视频解码器
-	AVCodec* vcodec = avcodec_find_decoder(ic->streams[videoStream]->codecpar->codec_id);
-	if (!vcodec) {
-		cout << "[CREATE DECODER] Can't find the video codec id " << ic->streams[videoStream]->codecpar->codec_id << endl;
-		return false;
-	}
-	else {
-		cout << "[CREATE DECODER] Find the vcodec " << ic->streams[videoStream]->codecpar->codec_id << endl;
-	}
+	if (videoStream >= 0) {
+		/************************************ 视频解码器部分 ************************************/
+		//找到视频解码器
+		AVCodec* vcodec = avcodec_find_decoder(ic->streams[videoStream]->codecpar->codec_id);
+		if (!vcodec) {
+			cout << "[CREATE DECODER] Can't find the video codec id " << ic->streams[videoStream]->codecpar->codec_id << endl;
+			return false;
+		}
+		else {
+			cout << "[CREATE DECODER] Find the vcodec " << ic->streams[videoStream]->codecpar->codec_id << endl;
+		}
 
-	//创建解码器上下文
-	if (vc == NULL) { vc = avcodec_alloc_context3(vcodec); }	
+		//创建解码器上下文
+		if (vc == NULL) { vc = avcodec_alloc_context3(vcodec); }
 
-	//配置解码器上下文参数
-	//新版本已经将AVStream结构体中的AVCodecContext字段定义为废弃属性。
-	//因此无法像旧的版本直接通过AVFormatContext获取到AVCodecContext结构体参数
-	//当前版本保存视音频流信息的结构体AVCodecParameters，FFmpeg提供了函数avcodec_parameters_to_context
-	//将音视频流信息拷贝到新的AVCodecContext结构体中
-	avcodec_parameters_to_context(vc, ic->streams[videoStream]->codecpar);
+		//配置解码器上下文参数
+		//新版本已经将AVStream结构体中的AVCodecContext字段定义为废弃属性。
+		//因此无法像旧的版本直接通过AVFormatContext获取到AVCodecContext结构体参数
+		//当前版本保存视音频流信息的结构体AVCodecParameters，FFmpeg提供了函数avcodec_parameters_to_context
+		//将音视频流信息拷贝到新的AVCodecContext结构体中
+		avcodec_parameters_to_context(vc, ic->streams[videoStream]->codecpar);
 
-	//4线程解码
-	//也可以先通过linux或者Windows API来获取CPU个数进而决定解码线程数
-	vc->thread_count = 4;
+		//4线程解码
+		//也可以先通过linux或者Windows API来获取CPU个数进而决定解码线程数
+		vc->thread_count = 4;
 
-	//打开解码器上下文
-	re = avcodec_open2(vc, 0, 0);
-	if (0 != re) {
-		avcodec_free_context(&vc);
-		cout << "[CREATE DECODER] avcodec_open2 failed: " << get_error(re) << endl;
-		return false;
-	}
-	else {
-		cout << "[CREATE DECODER] video - avcodec_open2 success!" << endl;
-	}
-
-	/************************************ 音频解码器部分 ************************************/
-	//找到音频解码器
-	AVCodec* acodec = avcodec_find_decoder(ic->streams[audioStream]->codecpar->codec_id);
-	if (!acodec) {
-		cout << "[CREATE DECODER] Can't find the audio codec id " << ic->streams[audioStream]->codecpar->codec_id << endl;
-		return false;
-	}
-	else {
-		cout << "[CREATE DECODER] Find the acodec " << ic->streams[audioStream]->codecpar->codec_id << endl;
+		//打开解码器上下文
+		re = avcodec_open2(vc, 0, 0);
+		if (0 != re) {
+			avcodec_free_context(&vc);
+			cout << "[CREATE DECODER] avcodec_open2 failed: " << get_error(re) << endl;
+			return false;
+		}
+		else {
+			cout << "[CREATE DECODER] video - avcodec_open2 success!" << endl;
+		}
 	}
 
-	//创建解码器上下文
-	if (ac == NULL) { ac = avcodec_alloc_context3(acodec); }
+	if (audioStream >= 0) {
+		/************************************ 音频解码器部分 ************************************/
+		//找到音频解码器
+		AVCodec* acodec = avcodec_find_decoder(ic->streams[audioStream]->codecpar->codec_id);
+		if (!acodec) {
+			cout << "[CREATE DECODER] Can't find the audio codec id " << ic->streams[audioStream]->codecpar->codec_id << endl;
+			return false;
+		}
+		else {
+			cout << "[CREATE DECODER] Find the acodec " << ic->streams[audioStream]->codecpar->codec_id << endl;
+		}
 
-	//配置解码器上下文参数
-	avcodec_parameters_to_context(ac, ic->streams[audioStream]->codecpar);
+		//创建解码器上下文
+		if (ac == NULL) { ac = avcodec_alloc_context3(acodec); }
 
-	//4线程解码
-	ac->thread_count = 4;
+		//配置解码器上下文参数
+		avcodec_parameters_to_context(ac, ic->streams[audioStream]->codecpar);
 
-	//打开解码器上下文
-	/*
-		对于avcodec_open2函数的第二个参数，If a non-NULL codec has been previously passed to 
-		avcodec_alloc_context3() or for this context, then this parameter MUST be either NULL 
-		or equal to the previously passed codec.
-	 */
-	re = avcodec_open2(ac, 0, 0);
-	if (0 != re) {
-		avcodec_free_context(&ac);
-		cout << "[CREATE DECODER] avcodec_open2 failed: " << get_error(re) << endl;
-		return false;
-	}
-	else {
-		cout << "[CREATE DECODER] audio - avcodec_open2 success!" << endl;
-		sampleRate = ac->sample_rate;
-		channel = ac->channels;
-		switch (ac->sample_fmt) {
+		//4线程解码
+		ac->thread_count = 4;
+
+		//打开解码器上下文
+		/*
+			对于avcodec_open2函数的第二个参数，If a non-NULL codec has been previously passed to
+			avcodec_alloc_context3() or for this context, then this parameter MUST be either NULL
+			or equal to the previously passed codec.
+		 */
+		re = avcodec_open2(ac, 0, 0);
+		if (0 != re) {
+			avcodec_free_context(&ac);
+			cout << "[CREATE DECODER] avcodec_open2 failed: " << get_error(re) << endl;
+			return false;
+		}
+		else {
+			cout << "[CREATE DECODER] audio - avcodec_open2 success!" << endl;
+			sampleRate = ac->sample_rate;
+			channel = ac->channels;
+			switch (ac->sample_fmt) {
 			case AV_SAMPLE_FMT_S16:
 				sampleSize = 16;
 				break;
@@ -560,10 +571,10 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 			default:
 				cout << "[CREATE DECODER] Error sample fmt " << ac->sample_fmt << endl;
 				return false;
+			}
+			cout << "[CREATE DECODER] sampleRate/channel/sampleSize " << sampleRate << "/" << channel << "/" << sampleSize << endl;
 		}
-		cout << "[CREATE DECODER] sampleRate/channel/sampleSize " << sampleRate << "/" << channel << "/" << sampleSize << endl;
 	}
-
 	return true;
 }
 
@@ -623,8 +634,8 @@ void XFFmpeg::clean() {
 	currentVPtsMs = 0;
 	fps = 0;
 	bSendFlushPacket = false;
-	videoStream = 0;
-	audioStream = 0;
+	videoStream = -1;
+	audioStream = -1;
 	error_buf[0] = '\0';
 }
 

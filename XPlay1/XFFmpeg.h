@@ -46,8 +46,8 @@ public:
 	int get_current_video_pts(AVPacket* pkt);
 	int get_current_audio_pts();
 	bool seek(float pos); // pos是拖动滑动条在时间轴上的位置百分比，取值范围0~1
-	int videoStream = 0;
-	int audioStream = 0;
+	int videoStream = -1;
+	int audioStream = -1;
 
 protected:
 	void compute_duration_ms();  // 计算文件总共的播放时长，以毫秒为单位
