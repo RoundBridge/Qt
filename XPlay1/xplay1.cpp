@@ -69,9 +69,8 @@ void XPlay1::open() {
     else {
         XVideoThread::bReset = true;
         XAudioThread::bReset = true;
-        while (!XVideoThread::isExit);
+        while (!XVideoThread::isExit || !XAudioThread::isExit);
         XVideoThread::bReset = false;
-        while (!XAudioThread::isExit);
         XAudioThread::bReset = false;
         cout << "[XPLAY] Reset XDistributeThread!" << endl;
         XDistributeThread::bReset = true;

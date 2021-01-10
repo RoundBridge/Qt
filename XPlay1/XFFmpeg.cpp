@@ -134,7 +134,7 @@ bool XFFmpeg::decode(const AVPacket* pkt) {
 	// 为什么这里只获取一次？难道不应该多获取几次，把里面的帧全部获取出来？
 	// 下面avcodec_receive_frame的第一个参数不能用ic->streams[pkt->stream_index]->codec了，因为它已经是
 	// 废弃属性了，用它的话，函数调用失败
-	re = avcodec_receive_frame(cc, frame);
+	re = avcodec_receive_frame(cc, frame);	// 这里的receive和上面的send是否可以分到两个地方来做！？
 	if (0 != re) {
 		mutex.unlock();
 		cout << "[DECODE] avcodec_receive_frame failed: " << get_error(re) << endl;
@@ -239,7 +239,7 @@ bool XFFmpeg::video_convert(uint8_t* const out, int out_w, int out_h, AVPixelFor
 			vSwsCtx,
 			frame->data,		//输入数据地址
 			frame->linesize,	//输入行跨度
-			0,					//the position in the source image of the slice to *process, 
+			0,					//the position in the source image of the slice to process, 
 								//that is the number(counted starting from
 								// zero) in the image of the first row of the slice
 			frame->height,		//输入高度
