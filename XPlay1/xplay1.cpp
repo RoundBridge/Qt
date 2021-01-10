@@ -50,7 +50,7 @@ void XPlay1::open() {
     int totalMs = 0, minutes = 0, seconds = 0;
     int ret = 0;
     char buf[24] = { 0 };
-    //char* url = "rtmp://58.200.131.2:1935/livetv/cctv13";
+    //char* name = "rtsp://3.84.6.190/vod/mp4:BigBuckBunny_115k.mov";
     QString name = QFileDialog::getOpenFileName(this, QString::fromLocal8Bit("打开")); // 英文的话，第二个参数直接就是QString("Open File")
     if (name.isEmpty()) {
         return;
@@ -59,7 +59,7 @@ void XPlay1::open() {
     XDistributeThread::get()->lock();
     this->setWindowTitle(name);
     ret = XFFmpeg::get()->open(name.toLocal8Bit());
-    //ret = XFFmpeg::get()->open(url);
+    //ret = XFFmpeg::get()->open(name);
     if (0 > ret) {
         XDistributeThread::get()->unlock();
         cout << "[XPLAY] Open " << name.toStdString().data() << " failed, " << XFFmpeg::get()->get_error(ret) << endl;

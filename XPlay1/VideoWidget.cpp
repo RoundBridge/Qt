@@ -5,6 +5,7 @@
 #include "stdio.h"
 #include "XVideoThread.h"
 #include "xplay1.h"
+#include <QTime>
 
 using std::cout;
 using std::endl;
@@ -14,7 +15,7 @@ FILE* fp = NULL;
 
 VideoWidget::VideoWidget(QWidget* p) :QOpenGLWidget(p) {
 	//setFixedSize(800, 600);  // 设置后最大化或者拉动边框也不会调整尺寸了
-	startTimer(30);  // 开启30毫秒定时器(注意，播放完一个文件后定时器并没有关闭，所以可以继续播放另一个文件)
+	startTimer(40);  // 开启30毫秒定时器(注意，播放完一个文件后定时器并没有关闭，所以可以继续播放另一个文件)
 }
 
 bool VideoWidget::resize_image_buffer() {
@@ -55,9 +56,14 @@ void VideoWidget::paintEvent(QPaintEvent* e) {	// 重载窗口绘制事件函数
 	if (true != resize_image_buffer()) {
 		return;
 	}
+
+	QTime time;
+	time.start();
 	if (true != XFFmpeg::get()->video_convert(image->bits(), width(), height(), AV_PIX_FMT_BGRA)) {
 		return;
 	}
+	int timeElapsed = time.elapsed();
+	cout << "video_convert(" << width() << "x" << height() << ") coust " << timeElapsed << " ms" << endl;
 	// 调试用（保存解码出来的第100帧，看数据是否正确）
 	if (count == 100) {
 		//fp = fopen("argb.data", "wb");
