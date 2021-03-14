@@ -88,7 +88,9 @@ void XDistributeThread::run() {
 				av_packet_unref(pkt2);
 			}
 			av_packet_unref(pkt);
-			//av_packet_free(&pkt);  // 直接free会挂掉
+			//av_packet_free(&pkt);  // 直接free会挂掉(pkt是read函数返回的，如果这里free掉，pkt就不存在了，
+									 // 也就是read内部的packet变量所对应的对象空间就不存在了，但是packet
+									 // 变量本身还是有值的，所以不会重新alloc，导致挂掉)
 		}
 		XDistributeThread::get()->unlock();
 	}
