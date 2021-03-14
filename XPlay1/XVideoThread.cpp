@@ -11,7 +11,7 @@ bool XVideoThread::isExit = true;
 bool XVideoThread::isStart = false;
 bool XVideoThread::bReset = false;
 
-void XVideoThread::run() {  // ÖØĞ´QTÏß³Ìº¯Êı(ÔÚµ÷ÓÃstartÖ®ºó»áÔÚÏß³ÌÖĞÔËĞĞÕâ¸öº¯Êı)	
+void XVideoThread::run() {  // é‡å†™QTçº¿ç¨‹å‡½æ•°(åœ¨è°ƒç”¨startä¹‹åä¼šåœ¨çº¿ç¨‹ä¸­è¿è¡Œè¿™ä¸ªå‡½æ•°)
 	int vPts = -1;
 	int aPts = -1;
 
@@ -20,7 +20,7 @@ void XVideoThread::run() {  // ÖØĞ´QTÏß³Ìº¯Êı(ÔÚµ÷ÓÃstartÖ®ºó»áÔÚÏß³ÌÖĞÔËĞĞÕâ¸öº
 			cout << "[VIDEO THREAD] ------ Reset video thread! ------" << endl;
 			break;
 		}
-		if (!XVideoThread::isStart) {
+		if (!XVideoThread::isStart || XPlay1::bSeek) {
 			msleep(10);
 			continue;
 		}
@@ -29,31 +29,14 @@ void XVideoThread::run() {  // ÖØĞ´QTÏß³Ìº¯Êı(ÔÚµ÷ÓÃstartÖ®ºó»áÔÚÏß³ÌÖĞÔËĞĞÕâ¸öº
 		{
 			//cout << "[VIDEO THREAD] ------ Video thread running! ------" << endl;
 			AVPacket* pktv = XDistributeThread::get()->get_video_list()->front();
-			vPts = XFFmpeg::get()->get_current_video_pts(pktv);
-			aPts = XFFmpeg::get()->get_current_audio_pts();
-			// Çé¿ö1£º×îÔçµÄÊÓÆµÖ¡Ê±¼ä´Á¶¼´óÓÚµ±Ç°ÒôÆµÖ¡Ê±¼ä´Á£¬ËµÃ÷×îÔçµÄÊÓÆµÖ¡¶¼ÔÚµ±Ç°ÒôÆµÖ¡µÄºóÃæ£¬ÄÇ¾Í
-			//        ²»²¥·ÅÊÓÆµ£¬ÈÃÊÓÆµÔÚ¶ÓÁĞÖĞÔÙµÈ´ıÒ»»á¶ù£¬µÈÒôÆµÖ¡µÄÊ±¼ä´ÁÔö´óµ½ÄÜÆ¥ÅäÊÓÆµÖ¡Ê±¼ä´Á
-			// Çé¿ö2£º×îÔçµÄÊÓÆµÖ¡Ê±¼ä´ÁĞ¡ÓÚµÈÓÚµ±Ç°ÒôÆµÖ¡µÄÊ±¼ä´ÁÊ±£¬²¥·Å¸ÃÊÓÆµÖ¡
-			while (vPts > aPts && !XPlay1::bSeek && !bReset && isStart && !isExit) {
-				/*
-					´Ë´¦ÓÃÒôÆµÀ´Í¬²½ÊÓÆµ£¬Ò²¼´½«ÊÓÆµ°´ÕÕÒôÆµÊ±¼ä´ÁÀ´½øĞĞ²¥·Å
-					ÒòÎªÒôÆµÔÚ²ÉÑùÂÊ¡¢Í¨µÀÊı¡¢Ñù±¾µãÎ»¿íÈ·¶¨µÄÇé¿öÏÂ£¬²¥·ÅËÙ¶ÈÊÇ¹Ì¶¨
-					µÄ£¬¶øÊÓÆµÖ¡ÓëÖ¡Ö®¼äĞèÒªÓĞ¼ä¸ô£¬Õâ¸ö¼ä¸ôÈç¹ûÍ¨¹ısleepÀ´ÊµÏÖ¾Í²»×¼
-					È·£¬ÇÒÆ«²î»áÀÛ»ı£¬ËùÒÔÓÃÒôÆµÀ´Í¬²½ÊÓÆµ
-				*/
-				//cout << "[VIDEO THREAD] ------ vPts " << vPts << "ms, aPts " << aPts << " ms ------" << endl;
-				msleep(5);
-				aPts = XFFmpeg::get()->get_current_audio_pts();
-			}
-			if (isExit || bReset) {
-				XPlay1::unlock();
-				break;
-			}
-			if (!isStart || XPlay1::bSeek) {
-				XPlay1::unlock();
-				continue;
-			}
-			XFFmpeg::get()->decode(pktv);
+
+			while(!XFFmpeg::get()->decode(pktv)) {
+                msleep(1);
+                if (isExit || bReset || !isStart || XPlay1::bSeek) {
+                    goto SKIP;
+    			}
+            }
+
 			av_packet_unref(pktv);
 			if (pktv) av_packet_free(&pktv);
 			XDistributeThread::get()->get_video_list()->pop_front();
@@ -61,10 +44,11 @@ void XVideoThread::run() {  // ÖØĞ´QTÏß³Ìº¯Êı(ÔÚµ÷ÓÃstartÖ®ºó»áÔÚÏß³ÌÖĞÔËĞĞÕâ¸öº
 		else {
 			msleep(1);
 		}
-		//¶ÔÓÚ½âÂë³öÀ´µÄAVFrameÀàĞÍµÄyuv¡£×¢Òâ£¬linesize¶ÔÓ¦µÄÊÇÒ»ĞĞµÄ³¤¶È£¬±ÈÈç²âÊÔÊÓÆµÊÇ1280x720£¬ÇÒ
-		//formatÊÇAV_PIX_FMT_YUV420P£¬Ôòlinesize [0]/[1]/[2]·Ö±ğ±íÊ¾Ò»ĞĞµÄyuv³¤¶È£¬Îª1280/640/640.
-	    //¶ÔÓÚÒôÆµ£¬ÔòÊÇÒ»Ö¡ÒôÆµµÄ×Ö½ÚÊı£¬Èç¹ûÒôÆµÊÇfloatĞÍ£¨AV_SAMPLE_FMT_S32P£©ÇÒÊÇË«Í¨µÀµÄ£¬Ôò
-	    //linesize = 4 * 2 * as->codecpar->frame_size(as->codecpar->frame_size±íÊ¾Ò»Ö¡Êı¾İ£¬µ¥Í¨µÀÑù±¾Êı)
+    SKIP:
+		//å¯¹äºè§£ç å‡ºæ¥çš„AVFrameç±»å‹çš„yuvã€‚æ³¨æ„ï¼Œlinesizeå¯¹åº”çš„æ˜¯ä¸€è¡Œçš„é•¿åº¦ï¼Œæ¯”å¦‚æµ‹è¯•è§†é¢‘æ˜¯1280x720ï¼Œä¸”
+		//formatæ˜¯AV_PIX_FMT_YUV420Pï¼Œåˆ™linesize [0]/[1]/[2]åˆ†åˆ«è¡¨ç¤ºä¸€è¡Œçš„yuvé•¿åº¦ï¼Œä¸º1280/640/640.
+	    //å¯¹äºéŸ³é¢‘ï¼Œåˆ™æ˜¯ä¸€å¸§éŸ³é¢‘çš„å­—èŠ‚æ•°ï¼Œå¦‚æœéŸ³é¢‘æ˜¯floatå‹ï¼ˆAV_SAMPLE_FMT_S32Pï¼‰ä¸”æ˜¯åŒé€šé“çš„ï¼Œåˆ™
+	    //linesize = 4 * 2 * as->codecpar->frame_size(as->codecpar->frame_sizeè¡¨ç¤ºä¸€å¸§æ•°æ®ï¼Œå•é€šé“æ ·æœ¬æ•°)
 		XPlay1::unlock();
 	}
 	isExit = true;
@@ -75,6 +59,6 @@ XVideoThread:: ~XVideoThread() {
 
 }
 
-XVideoThread::XVideoThread() {  // ²»ÈÃÍâ²¿´´½¨Ïß³ÌÊµÀı
+XVideoThread::XVideoThread() {  // ä¸è®©å¤–éƒ¨åˆ›å»ºçº¿ç¨‹å®ä¾‹
 
 }

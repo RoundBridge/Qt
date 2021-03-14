@@ -25,10 +25,10 @@ void XDistributeThread::unlock() {
 }
 
 /*
-	¸ÃÏß³Ì×¨ÃÅÓÃÓÚ´ÓFFMpegÖĞ¶ÁÈ¡ÒôÊÓÆµÊı¾İ°ü£¬
-	È»ºó½«ËüÃÇ·ÅÈëÒôÆµºÍÊÓÆµÁ½¸ölistÖĞ£¬ÒôÆµ
-	ºÍÊÓÆµÁ½¸öÏß³Ì´ÓÕâÁ½¸ölistÖĞ¶ÁÈ¡¸÷×ÔµÄÊı
-	¾İ½øĞĞ´¦Àí
+	è¯¥çº¿ç¨‹ä¸“é—¨ç”¨äºä»FFMpegä¸­è¯»å–éŸ³è§†é¢‘æ•°æ®åŒ…ï¼Œ
+	ç„¶åå°†å®ƒä»¬æ”¾å…¥éŸ³é¢‘å’Œè§†é¢‘ä¸¤ä¸ªlistä¸­ï¼ŒéŸ³é¢‘
+	å’Œè§†é¢‘ä¸¤ä¸ªçº¿ç¨‹ä»è¿™ä¸¤ä¸ªlistä¸­è¯»å–å„è‡ªçš„æ•°
+	æ®è¿›è¡Œå¤„ç†
 */
 void XDistributeThread::run() {
 	AVPacket* pkt2 = NULL;
@@ -42,13 +42,13 @@ void XDistributeThread::run() {
 			cout << "[DISTRIBUTE THREAD] ------ Reset distribute thread! ------" << endl;
 			break;
 		}
-		/* Èç¹ûÒôÊÓÆµ¹¦ÄÜ¶¼Ã»ÓĞ¿ªÆô£¬²»×ö·Ö·¢ */
+		/* å¦‚æœéŸ³è§†é¢‘åŠŸèƒ½éƒ½æ²¡æœ‰å¼€å¯ï¼Œä¸åšåˆ†å‘ */
 		if (!XAudioThread::isStart && !XVideoThread::isStart) {
 			XDistributeThread::get()->unlock();
 			msleep(1);
 			continue;
 		}
-		/* ²»ÒªÈÃ¶ÓÁĞÀïÓĞÌ«¶àµÄ°ü»º´æ×Å */
+		/* ä¸è¦è®©é˜Ÿåˆ—é‡Œæœ‰å¤ªå¤šçš„åŒ…ç¼“å­˜ç€ */
 		if (videolist.size() >= 5 && audiolist.size() >= 5) {
 			XDistributeThread::get()->unlock();
 			msleep(10);
@@ -57,7 +57,7 @@ void XDistributeThread::run() {
 		if (XFFmpeg::get()->send_flush_packet()) {
 			if (videolist.size() > 0) {
 				XDistributeThread::get()->unlock();
-				msleep(1);  // ÏÈ½«¶ÓÁĞÖĞµÄÊÓÆµÖ¡·ÅÍê
+				msleep(1);  // å…ˆå°†é˜Ÿåˆ—ä¸­çš„è§†é¢‘å¸§æ”¾å®Œ
 				continue;
 			}
 			else {
@@ -72,28 +72,28 @@ void XDistributeThread::run() {
 				continue;
 			}
 			pkt2 = av_packet_alloc();
-			av_packet_ref(pkt2, pkt); // pkt2¹²ÏíÍ¬Ò»¸öÊı¾İ»º´æ¿Õ¼ä...
+			av_packet_ref(pkt2, pkt); // pkt2å…±äº«åŒä¸€ä¸ªæ•°æ®ç¼“å­˜ç©ºé—´...
 			if (pkt->stream_index == XFFmpeg::get()->videoStream) {
 				//cout << "[DISTRIBUTE THREAD] Push V " << numV << ", pts " << XFFmpeg::get()->get_current_video_pts(pkt2) << ", buffered vPkt " << videolist.size() << endl;
 				videolist.push_back(pkt2);
-				numV++;				
+				numV++;
 			}
 			else if (pkt->stream_index == XFFmpeg::get()->audioStream) {
 				//cout << "[DISTRIBUTE THREAD] Push A " << numA << ", pts " << XFFmpeg::get()->get_current_video_pts(pkt2) << ", buffered aPkt " << audiolist.size() << endl;
 				audiolist.push_back(pkt2);
-				numA++;				
+				numA++;
 			}
 			else {
 				cout << "[DISTRIBUTE THREAD] Unknown stream ID: " << pkt->stream_index << endl;
 				av_packet_unref(pkt2);
 			}
 			av_packet_unref(pkt);
-			//av_packet_free(&pkt);  // Ö±½Ófree»á¹Òµô
+			//av_packet_free(&pkt);  // ç›´æ¥freeä¼šæŒ‚æ‰
 		}
 		XDistributeThread::get()->unlock();
 	}
 	/*
-	Èç¹ûÒ»¸öÎÄ¼şÃ»ÓĞ²¥·ÅÍêÓÖÖØĞÂ´ò¿ªÁíÒ»¸öÎÄ¼ş£¬ÔòÒª°ÑÒôÊÓÆµlistÇå¿Õ
+	å¦‚æœä¸€ä¸ªæ–‡ä»¶æ²¡æœ‰æ’­æ”¾å®Œåˆé‡æ–°æ‰“å¼€å¦ä¸€ä¸ªæ–‡ä»¶ï¼Œåˆ™è¦æŠŠéŸ³è§†é¢‘listæ¸…ç©º
 	*/
 	close();
 	isExit = true;
@@ -106,14 +106,14 @@ void XDistributeThread::clear_packet_list(list<AVPacket*>* list) {
 	if (!list) {
 		return;
 	}
-	
+
 	while (list->size() > 0) {
 		pkt = list->front();
 		av_packet_unref(pkt);
 		av_packet_free(&pkt);
 		list->pop_front();
 	}
-	
+
 	return;
 }
 

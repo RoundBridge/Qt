@@ -110,7 +110,7 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -118,13 +118,13 @@
     <ClCompile Include="XAudioPlay.cpp" />
     <ClCompile Include="XAudioThread.cpp" />
     <ClCompile Include="XDistributeThread.cpp" />
+    <ClCompile Include="XFFmpeg.cpp" />
     <ClCompile Include="XSlider.cpp" />
     <ClCompile Include="XVideoThread.cpp" />
     <QtRcc Include="xplay1.qrc" />
     <QtUic Include="xplay1.ui" />
     <QtMoc Include="xplay1.h" />
     <ClCompile Include="VideoWidget.cpp" />
-    <ClCompile Include="XFFmpeg.cpp" />
     <ClCompile Include="xplay1.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>

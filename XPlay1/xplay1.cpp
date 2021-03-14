@@ -35,7 +35,7 @@ XPlay1::XPlay1(QWidget *parent)
     : QWidget(parent)
 {
     ui.setupUi(this);
-    startTimer(40);  // 40ºÁÃëË¢ĞÂÒ»´Îµ±Ç°²¥·ÅÊ±¼ä
+    startTimer(40);  // 40æ¯«ç§’åˆ·æ–°ä¸€æ¬¡å½“å‰æ’­æ”¾æ—¶é—´
 }
 
 int XPlay1::get_play_state() {
@@ -51,7 +51,7 @@ void XPlay1::open() {
     int ret = 0;
     char buf[24] = { 0 };
     //char* name = "rtsp://3.84.6.190/vod/mp4:BigBuckBunny_115k.mov";
-    QString name = QFileDialog::getOpenFileName(this, QString::fromLocal8Bit("´ò¿ª")); // Ó¢ÎÄµÄ»°£¬µÚ¶ş¸ö²ÎÊıÖ±½Ó¾ÍÊÇQString("Open File")
+    QString name = QFileDialog::getOpenFileName(this, QString::fromLocal8Bit("æ‰“å¼€")); // è‹±æ–‡çš„è¯ï¼Œç¬¬äºŒä¸ªå‚æ•°ç›´æ¥å°±æ˜¯QString("Open File")
     if (name.isEmpty()) {
         return;
     }
@@ -75,16 +75,16 @@ void XPlay1::open() {
         cout << "[XPLAY] Reset XDistributeThread!" << endl;
         XDistributeThread::bReset = true;
         XDistributeThread::get()->unlock();
-        // ÈÃ·Ö·¢Ïß³ÌÍË³öÒ»ÏÂ
+        // è®©åˆ†å‘çº¿ç¨‹é€€å‡ºä¸€ä¸‹
         while (!XDistributeThread::isExit);
-        // ÖØĞÂ¿ªÆô·Ö·¢Ïß³Ì
+        // é‡æ–°å¼€å¯åˆ†å‘çº¿ç¨‹
         XDistributeThread::isExit = false;
         XDistributeThread::bReset = false;
         /*
-            ĞèÒªµÈ´ı´ó¸Å10ºÁÃë×óÓÒ£¬·ñÔòÇ°Ò»¸öÊÓÆµÃ»·ÅÍê¾ÍĞÂ¿ªÒ»¸öÊÓÆµÊ±»áÎŞ·¨Æô¶¯
-            XDistributeThread£¬Ò²¼´ÏÂÃæµÄ´úÂëXDistributeThread::get()->start()²»ÉúĞ§
+            éœ€è¦ç­‰å¾…å¤§æ¦‚10æ¯«ç§’å·¦å³ï¼Œå¦åˆ™å‰ä¸€ä¸ªè§†é¢‘æ²¡æ”¾å®Œå°±æ–°å¼€ä¸€ä¸ªè§†é¢‘æ—¶ä¼šæ— æ³•å¯åŠ¨
+            XDistributeThreadï¼Œä¹Ÿå³ä¸‹é¢çš„ä»£ç XDistributeThread::get()->start()ä¸ç”Ÿæ•ˆ
         */
-        QThread::msleep(10);  
+        QThread::msleep(10);
         XDistributeThread::get()->start();
     }
 
@@ -96,35 +96,35 @@ void XPlay1::open() {
     totalMs = XFFmpeg::get()->get_duration_ms(XFFmpeg::get()->videoStream);
     minutes = (totalMs / 1000) / 60;
     seconds = (totalMs / 1000) % 60;
-    sprintf(buf, "%03d:%02d", minutes, seconds);  // ·Ö±ğÒÔ3Î»ºÍ2Î»ÏÔÊ¾·ÖÖÓºÍÃëÊı
+    sprintf(buf, "%03d:%02d", minutes, seconds);  // åˆ†åˆ«ä»¥3ä½å’Œ2ä½æ˜¾ç¤ºåˆ†é’Ÿå’Œç§’æ•°
     ui.totalTime->setText(buf);
 
-    // ÊÓÆµÏß³Ì
+    // è§†é¢‘çº¿ç¨‹
     XVideoThread::isStart = true;
     XVideoThread::isExit = false;
     XVideoThread::get()->start();
 
-    // ÒôÆµÏß³Ì
+    // éŸ³é¢‘çº¿ç¨‹
     XAudioThread::isStart = true;
     XAudioThread::isExit = false;
     XAudioThread::get()->start();
 
-    set_play_state(1);  // ½øÈë²¥·Å×´Ì¬
-    ui.play->setStyleSheet(PAUSE);  // ÔÚ²¥·Å×´Ì¬ÏÂÏÔÊ¾ÔİÍ£°´Å¥
+    set_play_state(1);  // è¿›å…¥æ’­æ”¾çŠ¶æ€
+    ui.play->setStyleSheet(PAUSE);  // åœ¨æ’­æ”¾çŠ¶æ€ä¸‹æ˜¾ç¤ºæš‚åœæŒ‰é’®
 
     return;
 }
 
 void XPlay1::play() {
-    if (get_play_state() == 1) {  // µ±Ç°ÊÇ²¥·Å×´Ì¬£¬µã»÷ºó½øÈëÔİÍ£×´Ì¬
+    if (get_play_state() == 1) {  // å½“å‰æ˜¯æ’­æ”¾çŠ¶æ€ï¼Œç‚¹å‡»åè¿›å…¥æš‚åœçŠ¶æ€
         set_play_state(2);
-        ui.play->setStyleSheet(PLAY);  // ÔÚÔİÍ£×´Ì¬ÏÂÏÔÊ¾²¥·Å°´Å¥
+        ui.play->setStyleSheet(PLAY);  // åœ¨æš‚åœçŠ¶æ€ä¸‹æ˜¾ç¤ºæ’­æ”¾æŒ‰é’®
         XVideoThread::isStart = false;
         XAudioThread::isStart = false;
     }
-    else if(get_play_state() == 2){  // µ±Ç°ÊÇÔİÍ£×´Ì¬£¬µã»÷ºó½øÈë²¥·Å×´Ì¬
+    else if(get_play_state() == 2){  // å½“å‰æ˜¯æš‚åœçŠ¶æ€ï¼Œç‚¹å‡»åè¿›å…¥æ’­æ”¾çŠ¶æ€
         set_play_state(1);
-        ui.play->setStyleSheet(PAUSE);  // ÔÚ²¥·Å×´Ì¬ÏÂÏÔÊ¾ÔİÍ£°´Å¥
+        ui.play->setStyleSheet(PAUSE);  // åœ¨æ’­æ”¾çŠ¶æ€ä¸‹æ˜¾ç¤ºæš‚åœæŒ‰é’®
         XVideoThread::isStart = true;
         XAudioThread::isStart = true;
     }
@@ -142,14 +142,15 @@ void XPlay1::sliderRelease() {
     isSliderPressed = false;
     pos = (float)place / (float)(ui.progressSlider->maximum() + 1);
     /*
-        Èç¹û²»¼ÓÕâ¸öËø£¬ÄÇÃ´ÏÂÃæseekºóÓĞ¿ÉÄÜXDistributeThreadÁ¢ÂíÖ´ĞĞ£¬¶Á³öpkt·Åµ½¶ÓÁĞÀïÃæ£¬µÈµ½
-        ÕâÀï¼ÌĞøÔËĞĞÏÂÈ¥ÓÖ°Ñ¶ÓÁĞÇå¿ÕÁË£¬ÓÚÊÇ¾Í¿ÉÄÜ²úÉú»¨ÆÁ£¨ÒòÎª°´ÕÕAVSEEK_FLAG_FRAME·½Ê½seekºó
-        µÚÒ»´Î·Å½øÈ¥µÄÊÇIÖ¡£©
+        å¦‚æœä¸åŠ è¿™ä¸ªé”ï¼Œé‚£ä¹ˆä¸‹é¢seekåæœ‰å¯èƒ½XDistributeThreadç«‹é©¬æ‰§è¡Œï¼Œè¯»å‡ºpktæ”¾åˆ°é˜Ÿåˆ—é‡Œé¢ï¼Œç­‰åˆ°
+        è¿™é‡Œç»§ç»­è¿è¡Œä¸‹å»åˆæŠŠé˜Ÿåˆ—æ¸…ç©ºäº†ï¼Œäºæ˜¯å°±å¯èƒ½äº§ç”ŸèŠ±å±ï¼ˆå› ä¸ºæŒ‰ç…§AVSEEK_FLAG_FRAMEæ–¹å¼seekå
+        ç¬¬ä¸€æ¬¡æ”¾è¿›å»çš„æ˜¯Iå¸§ï¼‰
     */
     XDistributeThread::get()->lock();
     XPlay1::wlock();
     bool re = XFFmpeg::get()->seek(pos);
     if (re) {
+        XFFmpeg::get()->reset_on_seek();
         XDistributeThread::get()->clear_packet_list(XDistributeThread::get()->get_video_list());
         XDistributeThread::get()->clear_packet_list(XDistributeThread::get()->get_audio_list());
         ui.progressSlider->setValue(place);
@@ -165,7 +166,7 @@ void XPlay1::sliderRelease() {
 }
 
 void XPlay1::timerEvent(QTimerEvent* e) {
-    int64_t  videoPts = 0;  // ÓÃ64Î»·ÀÒç³ö
+    int64_t  videoPts = 0;  // ç”¨64ä½é˜²æº¢å‡º
     int place = 0;
     int min = 0;
     int sec = 0;
@@ -184,7 +185,7 @@ void XPlay1::timerEvent(QTimerEvent* e) {
         if (!isSliderPressed) {
             maxSliderBar = ui.progressSlider->maximum();
             totalVms = XFFmpeg::get()->get_duration_ms(XFFmpeg::get()->videoStream);
-            place = videoPts * maxSliderBar / totalVms;  // videoPts * maxSliderBarÈç¹ûÊÇ32Î»ÀàĞÍ±äÁ¿£¬Ôò¶ÔÓÚ´óµÄÊÓÆµ»áÒç³ö
+            place = videoPts * maxSliderBar / totalVms;  // videoPts * maxSliderBarå¦‚æœæ˜¯32ä½ç±»å‹å˜é‡ï¼Œåˆ™å¯¹äºå¤§çš„è§†é¢‘ä¼šæº¢å‡º
             ui.progressSlider->setValue(place);
             //if (XVideoThread::isStart) {
             //    cout << "[XPLAY] Set slider to " << place << ", videoPts/totalVms/maxSliderBar is " << videoPts << "/" << totalVms << "/" << maxSliderBar << endl;
@@ -201,7 +202,7 @@ void XPlay1::timerEvent(QTimerEvent* e) {
 }
 
 void XPlay1::resizeEvent(QResizeEvent* e) {
-    ui.openGLWidget->resize(size());  // size()»ñÈ¡µ±Ç°´°¿ÚµÄ´óĞ¡£¨ÊÇXPlay1µÄ´°¿Ú´óĞ¡£¬¶ø²»ÊÇopenGLWidget´°¿ÚµÄ´óĞ¡£©
+    ui.openGLWidget->resize(size());  // size()è·å–å½“å‰çª—å£çš„å¤§å°ï¼ˆæ˜¯XPlay1çš„çª—å£å¤§å°ï¼Œè€Œä¸æ˜¯openGLWidgetçª—å£çš„å¤§å°ï¼‰
     ui.progressSlider->move(50, this->height() - 70);
     ui.progressSlider->resize(this->width() - 100, ui.progressSlider->height());
     ui.play->move(this->width() / 2 + 50, ui.progressSlider->y() + 17);

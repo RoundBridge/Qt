@@ -11,22 +11,21 @@ extern "C" {
 }
 
 const int error_len = 1024;
+const int max_buffered_yuv_frame_num = 10;
 
 class XFFmpeg
 {
 public:
 	static XFFmpeg* get() {
 		/*
-		a. ¾²Ì¬³ÉÔ±º¯ÊıÊÇÊôÓÚÀàµÄ,²»ÊÇ¶ÔÏóµÄ; 
-		b. ¾²Ì¬³ÉÔ±º¯ÊıµÄµ÷ÓÃ·½Ê½ºÍ¾²Ì¬³ÉÔ±±äÁ¿µÄ·½·¨ÀàËÆ¡£ 
-		c. ¾²Ì¬³ÉÔ±º¯Êı²»ÄÜ¹»µ÷ÓÃÆÕÍ¨µÄ³ÉÔ±º¯ÊıºÍÆÕÍ¨µÄ³ÉÔ±±äÁ¿,ÒòÎª¾²Ì¬³ÉÔ±º¯ÊıÊôÓÚÀà,
-		²»ÖªµÀÆÕÍ¨µÄ³ÉÔ±ÊôĞÔÊôÓÚÄÄ¸ö¶ÔÏó,Ö»ÄÜµ÷ÓÃ¾²Ì¬µÄÀàµÄ×ÊÔ´£¨¾²Ì¬³ÉÔ±º¯Êı²»½ÓÊÜÒşº¬
-		µÄthis×Ô±äÁ¿¡£ËùÒÔ£¬Ëü¾ÍÎŞ·¨·ÃÎÊ×Ô¼ºÀàµÄ·Ç¾²Ì¬³ÉÔ±£©¡£
+		a. é™æ€æˆå‘˜å‡½æ•°æ˜¯å±äºç±»çš„,ä¸æ˜¯å¯¹è±¡çš„;
+		b. é™æ€æˆå‘˜å‡½æ•°çš„è°ƒç”¨æ–¹å¼å’Œé™æ€æˆå‘˜å˜é‡çš„æ–¹æ³•ç±»ä¼¼ã€‚
+		c. é™æ€æˆå‘˜å‡½æ•°ä¸æ¥å—éšå«		çš„thisè‡ªå˜é‡ã€‚
 		*/
 		static XFFmpeg f_obj;
 		/*
-		°ÑÒ»¸öÀàµÄ³ÉÔ±ËµÃ÷ÎªstaticÊ±,¸ÃÀàÎŞÂÛ´´½¨¶àÉÙ¸ö¶ÔÏó,ÕâĞ©¶ÔÏó¶¼¹²ÏíÕâ¸östatic³ÉÔ±; 
-		¾²Ì¬³ÉÔ±±äÁ¿ÊôÓÚÀà,²»ÊôÓÚ¶ÔÏó; ¶¨Òå¾²Ì¬³ÉÔ±±äÁ¿µÄÊ±ºò,ÊÇÔÚÀàµÄÍâ²¿¡£
+		æŠŠä¸€ä¸ªç±»çš„æˆå‘˜è¯´æ˜ä¸ºstaticæ—¶,è¯¥ç±»æ— è®ºåˆ›å»ºå¤šå°‘ä¸ªå¯¹è±¡,è¿™äº›å¯¹è±¡éƒ½å…±äº«è¿™ä¸ªstaticæˆå‘˜;
+		é™æ€æˆå‘˜å˜é‡å±äºç±»,ä¸å±äºå¯¹è±¡; å®šä¹‰é™æ€æˆå‘˜å˜é‡çš„æ—¶å€™,æ˜¯åœ¨ç±»çš„å¤–éƒ¨ã€‚
 		*/
 		return &f_obj;
 	}
@@ -34,7 +33,7 @@ public:
 	int open(const char* path);
 	AVPacket* read();
 	bool decode(const AVPacket* pkt);
-	AVFrame *get_buffered_frames();  // »ñÈ¡½âÂë½áÊø½×¶Î»º´æÔÚ½âÂëÆ÷ÖĞµÄÍ¼ÏñÊı¾İ
+	AVFrame *get_buffered_frames();  // è·å–è§£ç ç»“æŸé˜¶æ®µç¼“å­˜åœ¨è§£ç å™¨ä¸­çš„å›¾åƒæ•°æ®
 	bool video_convert(uint8_t* const out, int out_w, int out_h, AVPixelFormat out_pixfmt);
 	int audio_convert(uint8_t* const out);
 	bool send_flush_packet();
@@ -45,49 +44,58 @@ public:
 	int get_video_fps();
 	int get_current_video_pts(AVPacket* pkt);
 	int get_current_audio_pts();
-	bool seek(float pos); // posÊÇÍÏ¶¯»¬¶¯ÌõÔÚÊ±¼äÖáÉÏµÄÎ»ÖÃ°Ù·Ö±È£¬È¡Öµ·¶Î§0~1
+	bool seek(float pos); // posæ˜¯æ‹–åŠ¨æ»‘åŠ¨æ¡åœ¨æ—¶é—´è½´ä¸Šçš„ä½ç½®ç™¾åˆ†æ¯”ï¼Œå–å€¼èŒƒå›´0~1
+	void reset_on_seek();      // seekæ—¶è¿›è¡Œçš„resetæ“ä½œ
 	int videoStream = -1;
 	int audioStream = -1;
 
 protected:
-	void compute_duration_ms();  // ¼ÆËãÎÄ¼ş×Ü¹²µÄ²¥·ÅÊ±³¤£¬ÒÔºÁÃëÎªµ¥Î»
-	void compute_video_fps();	 // ¼ÆËãÎÄ¼şµÄÖ¡ÂÊ
-	void compute_current_pts(AVFrame*, int);  // ¼ÆËãµ±Ç°ÒÑ¾­²¥·ÅµÄ×ÜÊ±³¤£¬ÒÔºÁÃëÎªµ¥Î»
-	bool create_decoder(AVFormatContext* ic);  // ´´½¨½âÂëÆ÷£¬ÓÃÓÚ½âÂë£¨ÄÚ²¿ÓÃ£©
+	bool clear_yuv_pool();
+	bool init_yuv_pool();
+	AVFrame* get_yuv_frame();
+    int64_t get_minimum_frame_pts(int* index);
+	bool release_yuv_frame(AVFrame* frame);
+	AVFrame* get_yuv_frame_decode();
+	void compute_duration_ms();  // è®¡ç®—æ–‡ä»¶æ€»å…±çš„æ’­æ”¾æ—¶é•¿ï¼Œä»¥æ¯«ç§’ä¸ºå•ä½
+	void compute_video_fps();	 // è®¡ç®—æ–‡ä»¶çš„å¸§ç‡
+	void compute_current_pts(AVFrame*, int);  // è®¡ç®—å½“å‰å·²ç»æ’­æ”¾çš„æ€»æ—¶é•¿ï¼Œä»¥æ¯«ç§’ä¸ºå•ä½
+	bool create_decoder(AVFormatContext* ic);  // åˆ›å»ºè§£ç å™¨ï¼Œç”¨äºè§£ç ï¼ˆå†…éƒ¨ç”¨ï¼‰
 	void clean();
-	XFFmpeg();	// Íâ²¿²»ÄÜÉú³É¶ÔÏóÁË£¬Íâ²¿¶¨Òå¶ÔÏó»áÊ§°Ü
+	XFFmpeg();	// å¤–éƒ¨ä¸èƒ½ç”Ÿæˆå¯¹è±¡äº†ï¼Œå¤–éƒ¨å®šä¹‰å¯¹è±¡ä¼šå¤±è´¥
 	char error_buf[error_len];
 	QMutex mutex;
-	//½â·â×°ÉÏÏÂÎÄ 
-	//NULL±íÊ¾ÓÉffmpegÉêÇë¿Õ¼ä£¬ÓÃÍêºóÒ²ÓÉffmpegÄÚ²¿ÊÍ·Å
-	//Èç¹ûÓÃ»§ÉêÇë¿Õ¼ä£¬ÔòÓÃÍêºóÓÃ»§×Ô¼ºÍê³É¿Õ¼äÊÍ·Å¹¤×÷
-	//Èç¹ûÓÃ»§ÊÍ·ÅffmpegÉêÇëµÄ¿Õ¼ä»áÓĞÎÊÌâ£¬ÒòÎªffmpegÊÇ
-	//ÔÚ¶¯Ì¬¿âÀïÉêÇëµÄ£¬ÓÃ»§²»Ò»¶¨ÄÜdeleteµô
-	AVFormatContext* ic = NULL;  // C++11ÀàÖĞ¿ÉÒÔÖ±½Ó¶Ô³ÉÔ±±äÁ¿¸³Öµ
-	AVCodecContext* ac = NULL;  // ÒôÆµ½âÂëÆ÷ÉÏÏÂÎÄ
-	AVCodecContext* vc = NULL;  // ÊÓÆµ½âÂëÆ÷ÉÏÏÂÎÄ		
-	SwsContext* vSwsCtx = NULL;  // ÊÓÆµÏñËØ³ß´ç¼°¸ñÊ½×ª»»ÉÏÏÂÎÄ
+    QMutex poolmutex;
+	//è§£å°è£…ä¸Šä¸‹æ–‡
+	//NULLè¡¨ç¤ºç”±ffmpegç”³è¯·ç©ºé—´ï¼Œç”¨å®Œåä¹Ÿç”±ffmpegå†…éƒ¨é‡Šæ”¾
+	//å¦‚æœç”¨æˆ·ç”³è¯·ç©ºé—´ï¼Œåˆ™ç”¨å®Œåç”¨æˆ·è‡ªå·±å®Œæˆç©ºé—´é‡Šæ”¾å·¥ä½œ
+	//å¦‚æœç”¨æˆ·é‡Šæ”¾ffmpegç”³è¯·çš„ç©ºé—´ä¼šæœ‰é—®é¢˜ï¼Œå› ä¸ºffmpegæ˜¯
+	//åœ¨åŠ¨æ€åº“é‡Œç”³è¯·çš„ï¼Œç”¨æˆ·ä¸ä¸€å®šèƒ½deleteæ‰
+	AVFormatContext* ic = NULL;  // C++11ç±»ä¸­å¯ä»¥ç›´æ¥å¯¹æˆå‘˜å˜é‡èµ‹å€¼
+	AVCodecContext* ac = NULL;  // éŸ³é¢‘è§£ç å™¨ä¸Šä¸‹æ–‡
+	AVCodecContext* vc = NULL;  // è§†é¢‘è§£ç å™¨ä¸Šä¸‹æ–‡
+	SwsContext* vSwsCtx = NULL;  // è§†é¢‘åƒç´ å°ºå¯¸åŠæ ¼å¼è½¬æ¢ä¸Šä¸‹æ–‡
 	AVPacket *packet = NULL;
-	AVFrame *yuv = NULL;
-	int totalVms = 0;	// ÊÓÆµ×ÜÊ±³¤£¬ºÁÃëÎªµ¥Î»
-	int totalAms = 0;	// ÒôÆµ×ÜÊ±³¤£¬ºÁÃëÎªµ¥Î»
-	int currentVPtsMs = 0;  // µ±Ç°ÒÑ²¥·ÅµÄÊÓÆµ×ÜÊ±³¤£¬ºÁÃëÎªµ¥Î»
-	int currentAPtsMs = 0;  // µ±Ç°ÒÑ²¥·ÅµÄÒôÆµ×ÜÊ±³¤£¬ºÁÃëÎªµ¥Î»
-	int fps = 0;	// ÊÓÆµÖ¡ÂÊ
-	bool bSendFlushPacket = false;  // ¶ÁÈ¡ÊÓÆµ½âÂë°ü½áÊøºóÊÇ·ñ·¢ËÍÇåÀí»º´æÖ¡
+	unsigned int yuvPool[2][max_buffered_yuv_frame_num];
+	int totalVms = 0;	// è§†é¢‘æ€»æ—¶é•¿ï¼Œæ¯«ç§’ä¸ºå•ä½
+	int totalAms = 0;	// éŸ³é¢‘æ€»æ—¶é•¿ï¼Œæ¯«ç§’ä¸ºå•ä½
+	int currentVPtsMs = 0;  // å½“å‰å·²æ’­æ”¾çš„è§†é¢‘æ€»æ—¶é•¿ï¼Œæ¯«ç§’ä¸ºå•ä½
+	int currentAPtsMs = 0;  // å½“å‰å·²æ’­æ”¾çš„éŸ³é¢‘æ€»æ—¶é•¿ï¼Œæ¯«ç§’ä¸ºå•ä½
+	int fps = 0;	// è§†é¢‘å¸§ç‡
+	float finterval = -1.0;  // è§†é¢‘å¸§ä¸å¸§ä¹‹é—´çš„é—´éš”ï¼Œæ¯«ç§’ä¸ºå•ä½
+	bool bSendFlushPacket = false;  // è¯»å–è§†é¢‘è§£ç åŒ…ç»“æŸåæ˜¯å¦å‘é€æ¸…ç†ç¼“å­˜å¸§
 
 public:
-	// Ò»´ÎÒôÆµÖØ²ÉÑùÊä³öµÄ×î´óÊı¾İÁ¿
+	// ä¸€æ¬¡éŸ³é¢‘é‡é‡‡æ ·è¾“å‡ºçš„æœ€å¤§æ•°æ®é‡
 #define MAXAUDIOSWRLEN	10000
-	// ²ÉÑùÂÊ
+	// é‡‡æ ·ç‡
 	int sampleRate = 48000;
-	// Ñù±¾µã±ÈÌØÊı
+	// æ ·æœ¬ç‚¹æ¯”ç‰¹æ•°
 	int sampleSize = 16;
-	// Í¨µÀÊı
+	// é€šé“æ•°
 	int channel = 2;
-	// ´æ´¢½âÂëºóÒôÆµÊı¾İµÄÖ¡Ö¸Õë
+	// å­˜å‚¨è§£ç åéŸ³é¢‘æ•°æ®çš„å¸§æŒ‡é’ˆ
 	AVFrame* pcm = NULL;
-	// ÒôÆµÖØ²ÉÑù×ª»»ÉÏÏÂÎÄ
+	// éŸ³é¢‘é‡é‡‡æ ·è½¬æ¢ä¸Šä¸‹æ–‡
 	SwrContext* aSwrCtx = NULL;
 };
 

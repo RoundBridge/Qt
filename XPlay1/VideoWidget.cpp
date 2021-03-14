@@ -9,13 +9,13 @@
 
 using std::cout;
 using std::endl;
-// µ÷ÊÔÊ±±£´æ½âÂë³öÀ´µÄÍ¼Æ¬ÓÃ
+// è°ƒè¯•æ—¶ä¿å­˜è§£ç å‡ºæ¥çš„å›¾ç‰‡ç”¨
 int count = 0;
 FILE* fp = NULL;
 
 VideoWidget::VideoWidget(QWidget* p) :QOpenGLWidget(p) {
-	//setFixedSize(800, 600);  // ÉèÖÃºó×î´ó»¯»òÕßÀ­¶¯±ß¿òÒ²²»»áµ÷Õû³ß´çÁË
-	startTimer(40);  // ¿ªÆô30ºÁÃë¶¨Ê±Æ÷(×¢Òâ£¬²¥·ÅÍêÒ»¸öÎÄ¼şºó¶¨Ê±Æ÷²¢Ã»ÓĞ¹Ø±Õ£¬ËùÒÔ¿ÉÒÔ¼ÌĞø²¥·ÅÁíÒ»¸öÎÄ¼ş)
+	//setFixedSize(800, 600);  // è®¾ç½®åæœ€å¤§åŒ–æˆ–è€…æ‹‰åŠ¨è¾¹æ¡†ä¹Ÿä¸ä¼šè°ƒæ•´å°ºå¯¸äº†
+	startTimer(20);  // å¼€å¯30æ¯«ç§’å®šæ—¶å™¨(æ³¨æ„ï¼Œæ’­æ”¾å®Œä¸€ä¸ªæ–‡ä»¶åå®šæ—¶å™¨å¹¶æ²¡æœ‰å…³é—­ï¼Œæ‰€ä»¥å¯ä»¥ç»§ç»­æ’­æ”¾å¦ä¸€ä¸ªæ–‡ä»¶)
 }
 
 bool VideoWidget::resize_image_buffer() {
@@ -47,8 +47,9 @@ bool VideoWidget::resize_image_buffer() {
 	}
 }
 
-void VideoWidget::paintEvent(QPaintEvent* e) {	// ÖØÔØ´°¿Ú»æÖÆÊÂ¼şº¯Êı	
+void VideoWidget::paintEvent(QPaintEvent* e) {	// é‡è½½çª—å£ç»˜åˆ¶äº‹ä»¶å‡½æ•°
 	QPainter painter;
+	QTime time;
 
 	if (XVideoThread::isExit || XPlay1::bSeek) {
 		return;
@@ -57,40 +58,40 @@ void VideoWidget::paintEvent(QPaintEvent* e) {	// ÖØÔØ´°¿Ú»æÖÆÊÂ¼şº¯Êı
 		return;
 	}
 
-	QTime time;
 	time.start();
 	if (true != XFFmpeg::get()->video_convert(image->bits(), width(), height(), AV_PIX_FMT_BGRA)) {
 		return;
 	}
 	int timeElapsed = time.elapsed();
-	cout << "video_convert(" << width() << "x" << height() << ") coust " << timeElapsed << " ms" << endl;
-	// µ÷ÊÔÓÃ£¨±£´æ½âÂë³öÀ´µÄµÚ100Ö¡£¬¿´Êı¾İÊÇ·ñÕıÈ·£©
+	//cout << "video_convert(" << width() << "x" << height() << ") coust " << timeElapsed << " ms" << endl;
+
+	// è°ƒè¯•ç”¨ï¼ˆä¿å­˜è§£ç å‡ºæ¥çš„ç¬¬100å¸§ï¼Œçœ‹æ•°æ®æ˜¯å¦æ­£ç¡®ï¼‰
 	if (count == 100) {
 		//fp = fopen("argb.data", "wb");
 		//fwrite(image->bits(), width()*height()*4, 1, fp);
-		//fclose(fp); /*¹Ø±ÕÎÄ¼ş*/
+		//fclose(fp); /*å…³é—­æ–‡ä»¶*/
 	}
-	// ¿ªÊ¼»­Ö®Ç°ÏÈÇåÀíÆÁÄ»
+	// å¼€å§‹ç”»ä¹‹å‰å…ˆæ¸…ç†å±å¹•
 	painter.begin(this);
-	// »æÖÆimage
+	// ç»˜åˆ¶image
 	painter.drawImage(QPoint(0, 0), *image);
-	// ×îºó½«»­Ãæ»æÖÆÉÏÈ¥
+	// æœ€åå°†ç”»é¢ç»˜åˆ¶ä¸Šå»
 	painter.end();
 
 	count++;
 }
 
-void VideoWidget::timerEvent(QTimerEvent* e) {		// ÖØÔØ¶¨Ê±Æ÷ÊÂ¼şº¯Êı£¨½çÃæË¢ĞÂÍ¨¹ı¶¨Ê±Æ÷½øĞĞ£©
+void VideoWidget::timerEvent(QTimerEvent* e) {		// é‡è½½å®šæ—¶å™¨äº‹ä»¶å‡½æ•°ï¼ˆç•Œé¢åˆ·æ–°é€šè¿‡å®šæ—¶å™¨è¿›è¡Œï¼‰
 	this->update();
-	//this->repaint();  // ÕâÁ½ÖÖ·½Ê½¶¼¿ÉÒÔ
+	//this->repaint();  // è¿™ä¸¤ç§æ–¹å¼éƒ½å¯ä»¥
 	/*
-	repaint():±»µ÷ÓÃÖ®ºó£¬Á¢¼´Ö´ĞĞÖØ»æ£¬Òò´ËrepaintÊÇ×î¿ìµÄ£¬½ô¼±Çé¿öÏÂĞèÒªÁ¢¿ÌÖØ»æµÄ¿ÉÒÔÊ¹ÓÃrepaint()¡£
-	µ«ÊÇÈİÒ×ÒıÆğRecursive repaint£¬ÌØ±ğÊÇµ÷ÓÃrepaintµÄº¯Êı²»ÄÜ·Åµ½paintEventÖĞµ÷ÓÃ£¬·ñÔò»áÔì³ÉËÀÑ­»·¡£
-	update():¸úrepaint()±È½Ï£¬updateÔò¸ü¼ÓÓĞÓÅÔ½ĞÔ¡£update()µ÷ÓÃÖ®ºó²¢²»ÊÇÁ¢¼´ÖØ»æ£¬¶øÊÇ½«ÖØ»æÊÂ¼ş·ÅÈë
-	Ö÷ÏûÏ¢Ñ­»·ÖĞ£¬ÓÉmainµÄeventloopÀ´Í³Ò»µ÷¶ÈµÄ(ÆäÊµÒ²ÊÇ±È½Ï¿ìµÄ)¡£updateÔÚµ÷ÓÃpaintEventÖ®Ç°£¬»¹×öÁËºÜ
-	¶àÓÅ»¯£¬Èç¹ûupdate±»µ÷ÓÃÁËºÜ¶à´Î£¬×îºóÕâĞ©update»áºÏ²¢µ½Ò»¸ö´óµÄÖØ»æÊÂ¼ş¼ÓÈëµ½ÏûÏ¢¶ÓÁĞ£¬×îºóÖ»ÓĞÕâ
-	¸ö´óµÄupdate±»Ö´ĞĞÒ»´Î¡£Í¬Ê±Ò²±ÜÃâÁËrepaint()ÖĞËùÌáµ½µÄËÀÑ­»·¡£Òò´Ë£¬Ò»°ãÇé¿öÏÂ£¬µ÷ÓÃupdate¾Í¹»ÁË£¬
-	¸úrepaint()±ÈÆğÀ´£¬updateÊÇÍÆ¼öÊ¹ÓÃµÄ¡£
+	repaint():è¢«è°ƒç”¨ä¹‹åï¼Œç«‹å³æ‰§è¡Œé‡ç»˜ï¼Œå› æ­¤repaintæ˜¯æœ€å¿«çš„ï¼Œç´§æ€¥æƒ…å†µä¸‹éœ€è¦ç«‹åˆ»é‡ç»˜çš„å¯ä»¥ä½¿ç”¨repaint()ã€‚
+	ä½†æ˜¯å®¹æ˜“å¼•èµ·Recursive repaintï¼Œç‰¹åˆ«æ˜¯è°ƒç”¨repaintçš„å‡½æ•°ä¸èƒ½æ”¾åˆ°paintEventä¸­è°ƒç”¨ï¼Œå¦åˆ™ä¼šé€ æˆæ­»å¾ªç¯ã€‚
+	update():è·Ÿrepaint()æ¯”è¾ƒï¼Œupdateåˆ™æ›´åŠ æœ‰ä¼˜è¶Šæ€§ã€‚update()è°ƒç”¨ä¹‹åå¹¶ä¸æ˜¯ç«‹å³é‡ç»˜ï¼Œè€Œæ˜¯å°†é‡ç»˜äº‹ä»¶æ”¾å…¥
+	ä¸»æ¶ˆæ¯å¾ªç¯ä¸­ï¼Œç”±mainçš„eventloopæ¥ç»Ÿä¸€è°ƒåº¦çš„(å…¶å®ä¹Ÿæ˜¯æ¯”è¾ƒå¿«çš„)ã€‚updateåœ¨è°ƒç”¨paintEventä¹‹å‰ï¼Œè¿˜åšäº†å¾ˆ
+	å¤šä¼˜åŒ–ï¼Œå¦‚æœupdateè¢«è°ƒç”¨äº†å¾ˆå¤šæ¬¡ï¼Œæœ€åè¿™äº›updateä¼šåˆå¹¶åˆ°ä¸€ä¸ªå¤§çš„é‡ç»˜äº‹ä»¶åŠ å…¥åˆ°æ¶ˆæ¯é˜Ÿåˆ—ï¼Œæœ€ååªæœ‰è¿™
+	ä¸ªå¤§çš„updateè¢«æ‰§è¡Œä¸€æ¬¡ã€‚åŒæ—¶ä¹Ÿé¿å…äº†repaint()ä¸­æ‰€æåˆ°çš„æ­»å¾ªç¯ã€‚å› æ­¤ï¼Œä¸€èˆ¬æƒ…å†µä¸‹ï¼Œè°ƒç”¨updateå°±å¤Ÿäº†ï¼Œ
+	è·Ÿrepaint()æ¯”èµ·æ¥ï¼Œupdateæ˜¯æ¨èä½¿ç”¨çš„ã€‚
 	*/
 }
 

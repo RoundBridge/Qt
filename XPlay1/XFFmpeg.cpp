@@ -2,6 +2,7 @@
 #include "XVideoThread.h"
 #include "XAudioThread.h"
 #include <iostream>
+#include <ctime>
 using std::cout;
 using std::endl;
 
@@ -11,38 +12,39 @@ using std::endl;
 #pragma comment(lib, "swscale.lib")
 #pragma comment(lib, "swresample.lib")
 
-int XFFmpeg::open(const char* path) {	
-	//ÏÈ¹Ø±ÕÏÖÓĞµÄ×ÊÔ´
+int XFFmpeg::open(const char* path) {
+	//å…ˆå…³é—­ç°æœ‰çš„èµ„æº
 	close();
-	//²ÎÊıÉèÖÃ
+	//å‚æ•°è®¾ç½®
 	AVDictionary* opts = NULL;
-	//ÓÃav_dict_setÌí¼ÓÊôĞÔ
-	av_dict_set(&opts, "rtsp_transport", "tcp", 0);  //ÉèÖÃrtspÁ÷ÒÔtcp´ò¿ª
-	av_dict_set(&opts, "max_delay", "500", 0);  //ÉèÖÃÍøÂçÑÓÊ±
+	//ç”¨av_dict_setæ·»åŠ å±æ€§
+	av_dict_set(&opts, "rtsp_transport", "tcp", 0);  //è®¾ç½®rtspæµä»¥tcpæ‰“å¼€
+	av_dict_set(&opts, "max_delay", "500", 0);  //è®¾ç½®ç½‘ç»œå»¶æ—¶
 
 	mutex.lock();
 	int re = avformat_open_input(
 		&ic,
 		path,
-		0,  //0±íÊ¾×Ô¶¯Ñ¡Ôñ½â·â×°Æ÷
-		&opts  //²ÎÊıÉèÖÃ£¬±ÈÈçrtspµÄÑÓÊ±Ê±¼ä£¬´«NULL±íÊ¾Ä¬ÈÏÉèÖÃ
+		0,  //0è¡¨ç¤ºè‡ªåŠ¨é€‰æ‹©è§£å°è£…å™¨
+		&opts  //å‚æ•°è®¾ç½®ï¼Œæ¯”å¦‚rtspçš„å»¶æ—¶æ—¶é—´ï¼Œä¼ NULLè¡¨ç¤ºé»˜è®¤è®¾ç½®
 	);
-	// ´ò¿ª³É¹¦µÄÇé¿öÏÂ£¬°Ñ¹ØÓÚÕâ¸öÎÄ¼şµÄÏà¹ØĞÅÏ¢¶¼¸üĞÂºÃ£¬±ãÓÚÍâ²¿Ê¹ÓÃ
-	if (0 <= re) {	// 0±íÊ¾³É¹¦£¬¸ºÊı±íÊ¾Ê§°Ü£¬µ«ÊÇÓĞÊ±»á·µ»ØÕıÊı£¬ËùÒÔÕâÀïÔİÇÒÓÃÅĞ¶Ï 0<=re
-		re = create_decoder(ic);		
+	// æ‰“å¼€æˆåŠŸçš„æƒ…å†µä¸‹ï¼ŒæŠŠå…³äºè¿™ä¸ªæ–‡ä»¶çš„ç›¸å…³ä¿¡æ¯éƒ½æ›´æ–°å¥½ï¼Œä¾¿äºå¤–éƒ¨ä½¿ç”¨
+	if (0 <= re) {	// 0è¡¨ç¤ºæˆåŠŸï¼Œè´Ÿæ•°è¡¨ç¤ºå¤±è´¥ï¼Œä½†æ˜¯æœ‰æ—¶ä¼šè¿”å›æ­£æ•°ï¼Œæ‰€ä»¥è¿™é‡Œæš‚ä¸”ç”¨åˆ¤æ–­ 0<=re
+		re = create_decoder(ic);
+		init_yuv_pool();
 		compute_duration_ms();
 		compute_video_fps();
 	}
 	mutex.unlock();
 
-	return re; // ÔİÇÒ½«re>=0±íÊ¾³É¹¦
+	return re; // æš‚ä¸”å°†re>=0è¡¨ç¤ºæˆåŠŸ
 }
 
 AVPacket* XFFmpeg::read() {
 	int re = 0;
 
 	mutex.lock();
-	// readº¯ÊıÀïÃæ²»¸ºÔğ¶ÔpacketµÄÊÍ·Å²Ù×÷£¬ĞèÒªÍâ²¿ÊÍ·Å
+	// readå‡½æ•°é‡Œé¢ä¸è´Ÿè´£å¯¹packetçš„é‡Šæ”¾æ“ä½œï¼Œéœ€è¦å¤–éƒ¨é‡Šæ”¾
 	if (packet == NULL) {
 		packet = av_packet_alloc();
 	}
@@ -50,12 +52,12 @@ AVPacket* XFFmpeg::read() {
 		mutex.unlock();
 		cout << "[PACKET] Please open first!" << endl;
 		return NULL;
-	}	
+	}
 	re = av_read_frame(ic, packet);
 	if (0 != re) {
 		mutex.unlock();
 		cout << "[PACKET] read frame error(" << re << "): " << get_error(re) << endl;
-		if (re == -541478725) {  // -541478725·µ»ØÖµÊÇ²âÊÔ³öÀ´µÄ±íÊ¾¶Áµ½ÎÄ¼şÄ©Î²
+		if (re == -541478725) {  // -541478725è¿”å›å€¼æ˜¯æµ‹è¯•å‡ºæ¥çš„è¡¨ç¤ºè¯»åˆ°æ–‡ä»¶æœ«å°¾
 			set_send_flush_packet(true);
 		}
 		return NULL;
@@ -66,19 +68,21 @@ AVPacket* XFFmpeg::read() {
 			if (packet->flags & AV_PKT_FLAG_KEY) {
 				//cout << "[PACKET] V --- read KEY packet! ---" << endl;
 			}
-			// ÓĞĞ©ÊÓÆµ¶Á³öÀ´µÄpacketÖĞµÄptsÊÇÎ´¶¨ÒåµÄ
+			// æœ‰äº›è§†é¢‘è¯»å‡ºæ¥çš„packetä¸­çš„ptsæ˜¯æœªå®šä¹‰çš„
 			if (packet->pts == AV_NOPTS_VALUE) {  // AV_NOPTS_VALUE ((int64_t)UINT64_C(0x8000000000000000))(-9223372036854775808)
 				//cout << "[PACKET] V packet pts undefined timestamp value: " << AV_NOPTS_VALUE << endl;
 			}
+			// AVPacketçš„dtsæ˜¯è§£ç é¡ºåºæ—¶é—´æˆ³ï¼Œä¹Ÿå³ç¼–ç é¡ºåºæ—¶é—´æˆ³ï¼Œå¦‚æœå­˜åœ¨Bå¸§ï¼Œå°±ä¼šå…ˆç¼–ç åé¢ä¸€å¸§ï¼Œç„¶åå†ç¼–ç å‰é¢ä¸€å¸§ï¼Œå¯¼è‡´æ˜¾ç¤ºæ—¶é—´æˆ³ptså‡ºç°å›è·³ç°è±¡ã€‚
+			// ffprobe -show_frames å‡ºæ¥çš„ç»“æœä¼šæŒ‰ç…§æ˜¾ç¤ºæ—¶é—´æˆ³ä»å°åˆ°å¤§æ’åˆ—ï¼Œä½†æ˜¯å®ƒçš„coded_picture_numberåˆ™ä¼šå›è·³ã€‚
 			else {
-				//cout << "[PACKET] V packet pts " << packet->pts << endl;  // AV_NOPTS_VALUE
+				//cout << "[PACKET] V packet display pts " << packet->pts << ", decode pts " << packet->dts << endl;  // AV_NOPTS_VALUE
 			}
 		}
 		else if (packet->stream_index == audioStream) {
 			if (packet->flags & AV_PKT_FLAG_KEY) {
 				//cout << "[PACKET] A --- read KEY packet! ---" << endl;
 			}
-			// ÓĞĞ©ÒôÆµ¶Á³öÀ´µÄpacketÖĞµÄptsÊÇÎ´¶¨ÒåµÄ
+			// æœ‰äº›éŸ³é¢‘è¯»å‡ºæ¥çš„packetä¸­çš„ptsæ˜¯æœªå®šä¹‰çš„
 			if (packet->pts == AV_NOPTS_VALUE) {  // AV_NOPTS_VALUE ((int64_t)UINT64_C(0x8000000000000000))(-9223372036854775808)
 				//cout << "[PACKET] A packet pts undefined timestamp value: " << AV_NOPTS_VALUE << endl;
 			}
@@ -94,74 +98,97 @@ AVPacket* XFFmpeg::read() {
 bool XFFmpeg::decode(const AVPacket* pkt) {
 	AVCodecContext* cc = NULL;
 	AVFrame* frame = NULL;
+	bool isAPkt = false;
 
 	if (!pkt || pkt->size <= 0 || !pkt->data) {
 		return false;
 	}
 
 	mutex.lock();
-	if (yuv == NULL) {
-		yuv = av_frame_alloc();
-	}
 	if (pcm == NULL) {
 		pcm = av_frame_alloc();
 	}
 
-	if (pkt->stream_index == videoStream) { 
-		cc = vc; 
-		frame = yuv; 
+	if (pkt->stream_index == videoStream) {
+		cc = vc;
+		if (nullptr == (frame = get_yuv_frame())) {
+			mutex.unlock();
+			//cout << "[DECODE] get_yuv_frame failed!" << endl;
+			return false;
+		}
+		else
+		{
+			//cout << "[DECODE] get_yuv_frame OK!" << endl;
+		}
 	}
 	else if (pkt->stream_index == audioStream) {
-		cc = ac; 
-		frame = pcm; 
+		cc = ac;
+		frame = pcm;
+		isAPkt = true;
 	}
-	else { 
+	else {
 		mutex.unlock();
-		cout << "[DECODE] stream index wrong: " << pkt->stream_index << endl; 
-		return false; 
+		cout << "[DECODE] stream index wrong: " << pkt->stream_index << endl;
+		return false;
 	}
 
-	// Èç¹ûÊÇÊÓÆµ°ü£¬pktÖĞµÄstream_indexÖ±½ÓÖ¸Ã÷ÊÓÆµÁ÷µÄidx£¬ÒôÆµ°üÍ¬Àí
-	// ·¢ËÍpacketµ½½âÂëÏß³Ì£¬Ö»ÊÇ½«pktÈÓ¸ø½âÂëÏß³Ì£¬¼¸ºõ²»Õ¼ÓÃCPU
-	// send NULLºóµ÷ÓÃ¶à´Îreceive¿ÉÒÔÈ¡³öËùÓĞ»º³åÖ¡
+	// å¦‚æœæ˜¯è§†é¢‘åŒ…ï¼Œpktä¸­çš„stream_indexç›´æ¥æŒ‡æ˜è§†é¢‘æµçš„idxï¼ŒéŸ³é¢‘åŒ…åŒç†
+	// å‘é€packetåˆ°è§£ç çº¿ç¨‹ï¼Œåªæ˜¯å°†pktæ‰”ç»™è§£ç çº¿ç¨‹ï¼Œå‡ ä¹ä¸å ç”¨CPU
+	// send NULLåè°ƒç”¨å¤šæ¬¡receiveå¯ä»¥å–å‡ºæ‰€æœ‰ç¼“å†²å¸§
 	int re = avcodec_send_packet(cc, pkt);
 	if (0 != re) {
 		mutex.unlock();
+		release_yuv_frame(frame);
 		cout << "[DECODE] avcodec_send_packet failed: " << get_error(re) << endl;
 		return false;
 	}
-	// Ö»ÊÇ´Ó½âÂëÏß³ÌÖĞ»ñÈ¡½âÂë½á¹û£¬¼¸ºõ²»Õ¼ÓÃCPU£¬Ò»´Îsend£¨Ò»´Î¿ÉÄÜ·¢ËÍ¶à¸öÒôÆµÖ¡£©¿ÉÄÜ¶ÔÓ¦¶à´Îreceive
-	// ÎªÊ²Ã´ÕâÀïÖ»»ñÈ¡Ò»´Î£¿ÄÑµÀ²»Ó¦¸Ã¶à»ñÈ¡¼¸´Î£¬°ÑÀïÃæµÄÖ¡È«²¿»ñÈ¡³öÀ´£¿
-	// ÏÂÃæavcodec_receive_frameµÄµÚÒ»¸ö²ÎÊı²»ÄÜÓÃic->streams[pkt->stream_index]->codecÁË£¬ÒòÎªËüÒÑ¾­ÊÇ
-	// ·ÏÆúÊôĞÔÁË£¬ÓÃËüµÄ»°£¬º¯Êıµ÷ÓÃÊ§°Ü
-	re = avcodec_receive_frame(cc, frame);	// ÕâÀïµÄreceiveºÍÉÏÃæµÄsendÊÇ·ñ¿ÉÒÔ·Öµ½Á½¸öµØ·½À´×ö£¡£¿
-	if (0 != re) {
+	// åªæ˜¯ä»è§£ç çº¿ç¨‹ä¸­è·å–è§£ç ç»“æœï¼Œå‡ ä¹ä¸å ç”¨CPUï¼Œä¸€æ¬¡sendï¼ˆä¸€æ¬¡å¯èƒ½å‘é€å¤šä¸ªéŸ³é¢‘å¸§ï¼‰å¯èƒ½å¯¹åº”å¤šæ¬¡receive
+	// ä¸ºä»€ä¹ˆè¿™é‡Œåªè·å–ä¸€æ¬¡ï¼Ÿéš¾é“ä¸åº”è¯¥å¤šè·å–å‡ æ¬¡ï¼ŒæŠŠé‡Œé¢çš„å¸§å…¨éƒ¨è·å–å‡ºæ¥ï¼Ÿ
+	// ä¸‹é¢avcodec_receive_frameçš„ç¬¬ä¸€ä¸ªå‚æ•°ä¸èƒ½ç”¨ic->streams[pkt->stream_index]->codecäº†ï¼Œå› ä¸ºå®ƒå·²ç»æ˜¯
+	// åºŸå¼ƒå±æ€§äº†ï¼Œç”¨å®ƒçš„è¯ï¼Œå‡½æ•°è°ƒç”¨å¤±è´¥
+	re = avcodec_receive_frame(cc, frame);
+	if (re == 0) {
 		mutex.unlock();
+	}
+	else if (re == AVERROR(EAGAIN)) { // output is not available in this state, user must try to send new input
+		mutex.unlock();
+		release_yuv_frame(frame);
+		cout << "[DECODE] avcodec_receive_frame EAGAIN: " << get_error(re) << endl;
+		return true;
+	}
+	else {
+		mutex.unlock();
+		release_yuv_frame(frame);
 		cout << "[DECODE] avcodec_receive_frame failed: " << get_error(re) << endl;
 		return false;
 	}
-	mutex.unlock();
-	compute_current_pts(frame, pkt->stream_index);
+
+	if (isAPkt) //è§†é¢‘å½“å‰çš„ptsç­‰åˆ°convertæ˜¾ç¤ºæ—¶å†è®¡ç®—
+		compute_current_pts(frame, pkt->stream_index);
+
 	return true;
 }
 
 AVFrame* XFFmpeg::get_buffered_frames() {
 	int re = 0;
+	AVFrame* frame = NULL;
 	static bool flag = true;
 	static int bufferedFramesCnt = 0;
-		
-	if (yuv == NULL) {
-		cout << "[GET BUFFERED FRAMES] YUV NULL!"<< endl;
-		return NULL;
+
+	if (nullptr == (frame = get_yuv_frame())) {
+		cout << "[DECODE] get_yuv_frame failed!" << endl;
+		return frame;
 	}
+
 	mutex.lock();
 	if (flag) {
 		avcodec_send_packet(vc, NULL);
 		flag = false;
 	}
-	re = avcodec_receive_frame(vc, yuv);
+	re = avcodec_receive_frame(vc, frame);
 	if (0 != re) {
 		mutex.unlock();
+		release_yuv_frame(frame);
 		// the decoder has been fully flushed, and there will be no more output frames
 		if (AVERROR_EOF == re) {
 			XVideoThread::isStart = false;
@@ -176,23 +203,25 @@ AVFrame* XFFmpeg::get_buffered_frames() {
 		return NULL;
 	}
 	mutex.unlock();
-	compute_current_pts(yuv, videoStream);
+	//compute_current_pts(frame, videoStream);  //è§†é¢‘å½“å‰çš„ptsç­‰åˆ°convertæ˜¾ç¤ºæ—¶å†è®¡ç®—
 	bufferedFramesCnt++;
-	return yuv;
+	return frame;
 }
 
 bool XFFmpeg::video_convert(uint8_t* const out, int out_w, int out_h, AVPixelFormat out_pixfmt) {
 	int re = 0;
 	uint8_t* data[AV_NUM_DATA_POINTERS] = { 0 };
 	int lines[AV_NUM_DATA_POINTERS] = { 0 };
-	const AVFrame* frame = yuv;
+	AVFrame* frame = nullptr;
 
-	if (yuv == NULL ||
-		yuv->width == 0 ||
-		yuv->height == 0) {
+	frame = get_yuv_frame_decode();
+	if (frame == nullptr ||
+		frame->width == 0 ||
+		frame->height == 0) {
+		release_yuv_frame(frame);
 		return false;
 	}
-	
+
 	if (out_pixfmt == AV_PIX_FMT_ARGB
 		|| out_pixfmt == AV_PIX_FMT_RGBA
 		|| out_pixfmt == AV_PIX_FMT_ABGR
@@ -223,37 +252,46 @@ bool XFFmpeg::video_convert(uint8_t* const out, int out_w, int out_h, AVPixelFor
 		* context.Otherwise, frees context and gets a new context with
 		* the new parameters.
 		*/
-		vSwsCtx,  //´«NULL»áĞÂ´´½¨£¬·ñÔò±È½Ï¸ÃÉÏÏÂÎÄºÍÏÂÃæÕâĞ©²ÎÊı½«Òª´´½¨³öÀ´µÄÉÏÏÂÎÄÊÇ·ñÒ»ÖÂ£¬
-				  //ÈôÒ»ÖÂÔòÖ±½Ó·µ»Ø¸ÃÉÏÏÂÎÄ£¬²»Ò»ÖÂÔò´´½¨ĞÂµÄÉÏÏÂÎÄ
-		frame->width, frame->height,	//ÊäÈëµÄ¿í¸ß
-		(AVPixelFormat)frame->format,	//ÊäÈëµÄ¸ñÊ½£¬YUV420p
-		out_w, out_h,					//Êä³öµÄ¿í¸ß
-		out_pixfmt,						//Êä³ö¸ñÊ½
-		SWS_BILINEAR,					//³ß´ç×ª»»µÄËã·¨
+		vSwsCtx,  //ä¼ NULLä¼šæ–°åˆ›å»ºï¼Œå¦åˆ™æ¯”è¾ƒè¯¥ä¸Šä¸‹æ–‡å’Œä¸‹é¢è¿™äº›å‚æ•°å°†è¦åˆ›å»ºå‡ºæ¥çš„ä¸Šä¸‹æ–‡æ˜¯å¦ä¸€è‡´ï¼Œ
+				  //è‹¥ä¸€è‡´åˆ™ç›´æ¥è¿”å›è¯¥ä¸Šä¸‹æ–‡ï¼Œä¸ä¸€è‡´åˆ™åˆ›å»ºæ–°çš„ä¸Šä¸‹æ–‡
+		frame->width, frame->height,	//è¾“å…¥çš„å®½é«˜
+		(AVPixelFormat)frame->format,	//è¾“å…¥çš„æ ¼å¼ï¼ŒYUV420p
+		out_w, out_h,					//è¾“å‡ºçš„å®½é«˜
+		out_pixfmt,						//è¾“å‡ºæ ¼å¼
+		SWS_BILINEAR,					//å°ºå¯¸è½¬æ¢çš„ç®—æ³•
 		0, 0, 0
 	);
 	//cout << "[CONVERT] the w/h of the input is: " << frame->width << "/" << frame->height << endl;
 	if (vSwsCtx) {
-		// sws_scaleº¯ÊıµÄ¿ªÏúºÜ´ó
-		re = sws_scale(			//·µ»ØÖµ the height of the output slice
+		// sws_scaleå‡½æ•°çš„å¼€é”€å¾ˆå¤§
+		re = sws_scale(			//è¿”å›å€¼ the height of the output slice
 			vSwsCtx,
-			frame->data,		//ÊäÈëÊı¾İµØÖ·
-			frame->linesize,	//ÊäÈëĞĞ¿ç¶È
-			0,					//the position in the source image of the slice to process, 
+			frame->data,		//è¾“å…¥æ•°æ®åœ°å€
+			frame->linesize,	//è¾“å…¥è¡Œè·¨åº¦
+			0,					//the position in the source image of the slice to process,
 								//that is the number(counted starting from
 								// zero) in the image of the first row of the slice
-			frame->height,		//ÊäÈë¸ß¶È
-			data,				//Êä³öÊı¾İµØÖ·
-			lines				//Êä³öĞĞ¿ç¶È
+			frame->height,		//è¾“å…¥é«˜åº¦
+			data,				//è¾“å‡ºæ•°æ®åœ°å€
+			lines				//è¾“å‡ºè¡Œè·¨åº¦
 		);
 		if (re != out_h) {
-			cout << "[VIDEO CONVERT] the height of the output is: " << re << ", the needed height is " << out_h << endl;
+			cout << "[VIDEO CONVERT] the height of sws_scale output is: " << re << ", the needed height is " << out_h << endl;
 			mutex.unlock();
 			return false;
-		}			
+		}
+		// è¿™æ¬¡è½¬æ¢æ²¡æˆåŠŸï¼Œä¸‹æ¬¡å†åšä¸€é
+		if (!release_yuv_frame(frame)) {
+			cout << "[VIDEO CONVERT] release_yuv_frame_buffer failed!" << endl;
+		}
+		mutex.unlock();
+		return true;
 	}
-	mutex.unlock();
-	return true;
+	else {
+		cout << "[VIDEO CONVERT] NO vSwsCtx available!" << endl;
+		mutex.unlock();
+		return false;
+	}
 }
 
 int XFFmpeg::audio_convert(uint8_t* const out) {
@@ -266,18 +304,18 @@ int XFFmpeg::audio_convert(uint8_t* const out) {
 		cout << "[AUDIO CONVERT] NULL PTR!" << endl;
 		return 0;
 	}
-	
+
 	if (!aSwrCtx) {
 		aSwrCtx = swr_alloc();
 		if (NULL == swr_alloc_set_opts(aSwrCtx,
-			ac->channel_layout,  // ÖØ²ÉÑùÊä³öµÄÉùµÀÄ£Ê½²»±ä£¬ÓÃµÄ¾ÍÊÇÊäÈëµÄÉùµÀÄ£Ê½¡£ÉùµÀÄ£Ê½£¬¿ÉÒÔÈÏÎªÊÇ±ÈÈçµ¥ÉùµÀ¡¢Ë«ÉùµÀ»òÕß2.1ÉùµÀ¡¢5.1ÉùµÀÖ®ÀàµÄ£¬µÈµÈ
-			AV_SAMPLE_FMT_S16,   // ÖØ²ÉÑùÊä³ö¹Ì¶¨³É16Î»
-			ac->sample_rate,	 // ÖØ²ÉÑùÊä³öµÄ²ÉÑùÂÊÕâÀï²»±ä»¯
-			ac->channel_layout,	 // ÊäÈëµÄÉùµÀÄ£Ê½
-			ac->sample_fmt,		 // ÊäÈëµÄÑù±¾¸ñÊ½
-			ac->sample_rate,	 // ÊäÈëµÄ²ÉÑùÂÊ
+			ac->channel_layout,  // é‡é‡‡æ ·è¾“å‡ºçš„å£°é“æ¨¡å¼ä¸å˜ï¼Œç”¨çš„å°±æ˜¯è¾“å…¥çš„å£°é“æ¨¡å¼ã€‚å£°é“æ¨¡å¼ï¼Œå¯ä»¥è®¤ä¸ºæ˜¯æ¯”å¦‚å•å£°é“ã€åŒå£°é“æˆ–è€…2.1å£°é“ã€5.1å£°é“ä¹‹ç±»çš„ï¼Œç­‰ç­‰
+			AV_SAMPLE_FMT_S16,   // é‡é‡‡æ ·è¾“å‡ºå›ºå®šæˆ16ä½
+			ac->sample_rate,	 // é‡é‡‡æ ·è¾“å‡ºçš„é‡‡æ ·ç‡è¿™é‡Œä¸å˜åŒ–
+			ac->channel_layout,	 // è¾“å…¥çš„å£°é“æ¨¡å¼
+			ac->sample_fmt,		 // è¾“å…¥çš„æ ·æœ¬æ ¼å¼
+			ac->sample_rate,	 // è¾“å…¥çš„é‡‡æ ·ç‡
 			0,
-			NULL)) 
+			NULL))
 		{
 			mutex.unlock();
 			cout << "[AUDIO CONVERT] swr_alloc_set_opts failed!" << endl;
@@ -286,19 +324,20 @@ int XFFmpeg::audio_convert(uint8_t* const out) {
 		swr_init(aSwrCtx);
 	}
 	dataOut[0] = out;
-	re = swr_convert(aSwrCtx, dataOut, MAXAUDIOSWRLEN, (const uint8_t**)pcm->data, pcm->nb_samples); // µÚÈı¸ö²ÎÊıÖ»Òª±£Ö¤´óÓÚÒ»Ö¡ÒôÆµÊı¾İµÄÖØ²ÉÑùÊä³ö´óĞ¡¼´¿É£¬Ò»°ã²»»á³¬¹ı10000
+	re = swr_convert(aSwrCtx, dataOut, MAXAUDIOSWRLEN, (const uint8_t**)pcm->data, pcm->nb_samples); // ç¬¬ä¸‰ä¸ªå‚æ•°åªè¦ä¿è¯å¤§äºä¸€å¸§éŸ³é¢‘æ•°æ®çš„é‡é‡‡æ ·è¾“å‡ºå¤§å°å³å¯ï¼Œä¸€èˆ¬ä¸ä¼šè¶…è¿‡10000
 	if (re <= 0) {
 		mutex.unlock();
 		cout << "[AUDIO CONVERT] swr_convert error, " << get_error(re) << endl;
 		return re;
 	}
-	// Get the required buffer size for the given audio parameters(ÖØ²ÉÑùºóÊä³öÊı¾İĞèÒªµÄ¿Õ¼ä´óĞ¡).
+	// Get the required buffer size for the given audio parameters(é‡é‡‡æ ·åè¾“å‡ºæ•°æ®éœ€è¦çš„ç©ºé—´å¤§å°).
 	re = av_samples_get_buffer_size(NULL, ac->channels, pcm->nb_samples, AV_SAMPLE_FMT_S16, 0);
 	mutex.unlock();
 	return re;
 }
 
 void XFFmpeg::compute_current_pts(AVFrame* frame, int streamId) {
+    int64_t stamp = -1;
 	double rate = 0.0;
 	int* temp = NULL;
 
@@ -314,9 +353,9 @@ void XFFmpeg::compute_current_pts(AVFrame* frame, int streamId) {
 	}
 	mutex.lock();
 	if (ic) {
-		//time base  ÎÒµÄÀí½âÊÇÒ»¸öµ¥Î»ËùÕ¼ÓÃµÄÃëÊı£¬±ÈÈç²âÊÔ·¢ÏÖ²ÉÑùÂÊÊÇ48000HzµÄÒôÆµ£¬Æä
-		//time base num/den·Ö±ğÊÇ1/48000£¬Ò²¾ÍÊÇÒ»¸ö²ÉÑùµãÕ¼ÓÃÊ±¼ä1/48000s
-		//¶øpts£¬ÎÒµÄÀí½âÊÇ¸ÃÊ±¿ÌÀÛ»ıµÄµ¥Î»Êı£¬Ôò¸ÃÊ±¿ÌµÄÃëÊı¾ÍÊÇ pts * timebase
+		//time base  æˆ‘çš„ç†è§£æ˜¯ä¸€ä¸ªå•ä½æ‰€å ç”¨çš„ç§’æ•°ï¼Œæ¯”å¦‚æµ‹è¯•å‘ç°é‡‡æ ·ç‡æ˜¯48000Hzçš„éŸ³é¢‘ï¼Œå…¶
+		//time base num/denåˆ†åˆ«æ˜¯1/48000ï¼Œä¹Ÿå°±æ˜¯ä¸€ä¸ªé‡‡æ ·ç‚¹å ç”¨æ—¶é—´1/48000s
+		//è€Œptsï¼Œæˆ‘çš„ç†è§£æ˜¯è¯¥æ—¶åˆ»ç´¯ç§¯çš„å•ä½æ•°ï¼Œåˆ™è¯¥æ—¶åˆ»çš„ç§’æ•°å°±æ˜¯ pts * timebase
 		if (ic->streams[streamId]->time_base.den == 0) {
 			rate = 0.0;
 		}
@@ -327,16 +366,34 @@ void XFFmpeg::compute_current_pts(AVFrame* frame, int streamId) {
 	else {
 		rate = 0.0;
 	}
-	/**
-	 *pts: Presentation timestamp in time_base units (time when frame should be shown to user).
-	 */
-	//*temp = frame->pts * rate * 1000;  // ÓĞÊ±¶Áµ½µÄptsÊÇAV_NOPTS_VALUE£¬ËùÒÔÕâÀï²ÉÓÃbest_effort_timestamp
-	/**
-	 * frame timestamp estimated using various heuristics, in stream time base
-	 * - encoding: unused
-	 * - decoding: set by libavcodec, read by user.
-	 */
-	*temp = frame->best_effort_timestamp * rate * 1000;
+    /**
+    *pts: Presentation timestamp in time_base units (time when frame should be shown to user).
+    */
+    /**
+    * frame timestamp estimated using various heuristics, in stream time base
+    * - encoding: unused
+    * - decoding: set by libavcodec, read by user.
+    */
+    // æœ‰æ—¶best_effort_timestampå’Œframe->ptsè¯»åˆ°çš„å€¼æ˜¯AV_NOPTS_VALUEï¼Œæ‰€ä»¥è¿™é‡Œåˆ¤æ–­ä¸€ä¸‹
+
+    if (frame->best_effort_timestamp != AV_NOPTS_VALUE) {
+        stamp = frame->best_effort_timestamp;
+    }
+    else {
+        if (frame->pts != AV_NOPTS_VALUE) {
+            stamp = frame->pts;
+        }
+        else {
+            // æ³¨æ„è¿™ä¸ªæ¡ä»¶åˆ¤æ–­æ˜¯è¿›å¾—æ¥çš„ï¼Œè¿™è¯´æ˜æœ‰ä¸ªæ— æ•°æ®çš„åŒ…ï¼ˆæµ‹è¯•æ—¶å‘ç°éŸ³é¢‘ç»å¸¸æœ‰è¿™ç§æƒ…å†µï¼Œéš¾é“æ˜¯é™éŸ³åŒ…ï¼ï¼Ÿï¼‰
+			if (!frame->buf[0]) {
+				cout << "[CURRENT PTS] AV_NOPTS_VALUE timestamp!!! With no ref buf!!! " << endl;
+			}
+            mutex.unlock();
+            return;
+        }
+    }
+
+	*temp = stamp * rate * 1000;
 	mutex.unlock();
 	if (videoStream == streamId) {
 		//cout << "[CURRENT PTS] V ------ best_effort_timestamp: " << frame->best_effort_timestamp << endl;
@@ -347,7 +404,7 @@ void XFFmpeg::compute_current_pts(AVFrame* frame, int streamId) {
 		//cout << "[CURRENT PTS] A frame->pts/temp: " << frame->pts << "/" << *temp << endl;
 	}
 	else {
-	
+
 	}
 	return;
 }
@@ -356,7 +413,7 @@ void XFFmpeg::compute_duration_ms() {
 	if (ic) {
 		if (videoStream >= 0) {
 			if (ic->streams[videoStream]->duration == AV_NOPTS_VALUE) {
-				totalVms = ic->duration / (AV_TIME_BASE / 1000);  // AV_TIME_BASE±íÊ¾1ÃëÓĞAV_TIME_BASE¸öµ¥Î»
+				totalVms = ic->duration / (AV_TIME_BASE / 1000);  // AV_TIME_BASEè¡¨ç¤º1ç§’æœ‰AV_TIME_BASEä¸ªå•ä½
 			}
 			else {
 				totalVms = 1000 * ic->streams[videoStream]->duration * ic->streams[videoStream]->time_base.num / ic->streams[videoStream]->time_base.den;
@@ -364,7 +421,7 @@ void XFFmpeg::compute_duration_ms() {
 		}
 		if (audioStream >= 0) {
 			if (ic->streams[audioStream]->duration == AV_NOPTS_VALUE) {
-				totalAms = ic->duration / (AV_TIME_BASE / 1000);  // AV_TIME_BASE±íÊ¾1ÃëÓĞAV_TIME_BASE¸öµ¥Î»
+				totalAms = ic->duration / (AV_TIME_BASE / 1000);  // AV_TIME_BASEè¡¨ç¤º1ç§’æœ‰AV_TIME_BASEä¸ªå•ä½
 			}
 			else {
 				totalAms = 1000 * ic->streams[audioStream]->duration * ic->streams[audioStream]->time_base.num / ic->streams[audioStream]->time_base.den;
@@ -380,7 +437,7 @@ void XFFmpeg::compute_duration_ms() {
 	cout << "[DURATION] TotalAms: " << totalAms << " ms" << endl;
 	if (videoStream >= 0)cout << "[DURATION] In stream, Vduration/num/den: " << ic->streams[videoStream]->duration << "/" << ic->streams[videoStream]->time_base.num << "/" << ic->streams[videoStream]->time_base.den << endl;
 	if (audioStream >= 0)cout << "[DURATION] In stream, Aduration/num/den: " << ic->streams[audioStream]->duration << "/" << ic->streams[audioStream]->time_base.num << "/" << ic->streams[audioStream]->time_base.den << endl;
-	cout << "[DURATION] In ic,	   duration " << ic->duration << endl; 
+	cout << "[DURATION] In ic,	   duration " << ic->duration << endl;
 
 	return;
 }
@@ -388,16 +445,19 @@ void XFFmpeg::compute_duration_ms() {
 void XFFmpeg::compute_video_fps() {
 	if (ic) {
 		if (ic->streams[videoStream]->avg_frame_rate.den == 0) {
-			fps = 0; 
+			fps = 0;
+			finterval = -1.0;
 		}
 		else {
 			fps = ic->streams[videoStream]->avg_frame_rate.num / ic->streams[videoStream]->avg_frame_rate.den;
+			finterval = 1000 * 1.0 / fps;
 		}
 	}
 	else {
 		fps = 0;
+		finterval = -1.0;
 	}
-	cout << "[FPS] " << fps << " fps" << endl;
+	cout << "[FPS] " << fps << " fps(" << finterval << ")" << endl;
 	return;
 }
 
@@ -416,20 +476,20 @@ bool XFFmpeg::seek(float pos) {
 	 * better to open a new AVFormatContext.
 	 */
 	avformat_flush(ic);
-	stamp = (float)ic->streams[videoStream]->duration * pos;	
-	re = av_seek_frame(ic, videoStream, stamp, AVSEEK_FLAG_FRAME|AVSEEK_FLAG_BACKWARD);
-	//avcodec_flush_buffers(ic->streams[videoStream]->codec);  // codecÊÇ·ÏÆúÊôĞÔ£¬Ê¹ÓÃ»áÒı·¢´íÎó
+	stamp = (float)ic->streams[videoStream]->duration * pos;
+	re = av_seek_frame(ic, videoStream, stamp, AVSEEK_FLAG_FRAME | AVSEEK_FLAG_BACKWARD);
+	//avcodec_flush_buffers(ic->streams[videoStream]->codec);  // codecæ˜¯åºŸå¼ƒå±æ€§ï¼Œä½¿ç”¨ä¼šå¼•å‘é”™è¯¯
 	/*
-		Èç¹ûsliderReleaseÀïÃæÃ»ÓĞ¼ÓXDistributeThread::get()->lock()Õâ°ÑËø£¬Í¬Ê±ÄØÏÂÃæÕâĞĞ´úÂëÓÖ×¢ÊÍµôÁË£¬
-		ÔòÍá´òÕı×Å£¬²»»áÓĞ»¨ÆÁÏÖÏó£¬ÒòÎª¶ÓÁĞÖĞÇåµôµÄpktËùÆğµÄ×÷ÓÃÕıºÃ±»»º´æÔÚ½âÂëÆ÷bufferÖĞµÄÖ¡ÃÖ²¹ÁË£¬
-		ËùÒÔ²»»á»¨ÆÁ£¬µ«ÊÇ»áÒıÆğÊ±¼ä´Á»ØÌø£¬ËùÒÔÕıÈ·µÄ·½Ê½Ó¦¸ÃÊÇÔÚsliderReleaseÀïÃæ¼ÓXDistributeThread::get()->lock()
-		Õâ°ÑËø£¬Í¬Ê±ÔËĞĞÏÂÃæÕâĞĞ´úÂë¡£
+		å¦‚æœsliderReleaseé‡Œé¢æ²¡æœ‰åŠ XDistributeThread::get()->lock()è¿™æŠŠé”ï¼ŒåŒæ—¶å‘¢ä¸‹é¢è¿™è¡Œä»£ç åˆæ³¨é‡Šæ‰äº†ï¼Œ
+		åˆ™æ­ªæ‰“æ­£ç€ï¼Œä¸ä¼šæœ‰èŠ±å±ç°è±¡ï¼Œå› ä¸ºé˜Ÿåˆ—ä¸­æ¸…æ‰çš„pktæ‰€èµ·çš„ä½œç”¨æ­£å¥½è¢«ç¼“å­˜åœ¨è§£ç å™¨bufferä¸­çš„å¸§å¼¥è¡¥äº†ï¼Œ
+		æ‰€ä»¥ä¸ä¼šèŠ±å±ï¼Œä½†æ˜¯ä¼šå¼•èµ·æ—¶é—´æˆ³å›è·³ï¼Œæ‰€ä»¥æ­£ç¡®çš„æ–¹å¼åº”è¯¥æ˜¯åœ¨sliderReleaseé‡Œé¢åŠ XDistributeThread::get()->lock()
+		è¿™æŠŠé”ï¼ŒåŒæ—¶è¿è¡Œä¸‹é¢è¿™è¡Œä»£ç ã€‚
 	*/
-	avcodec_flush_buffers(vc);  
-	
+	avcodec_flush_buffers(vc);
+
 	if (re >= 0)
 	{
-		currentVPtsMs = totalVms * pos;  // ÏÈ¶ÔÍÏ¶¯ºóµÄÊÓÆµpts½øĞĞ¸üĞÂÒ»ÏÂ£¬·ÀÖ¹slider bar»ØÌø
+		currentVPtsMs = totalVms * pos;  // å…ˆå¯¹æ‹–åŠ¨åçš„è§†é¢‘ptsè¿›è¡Œæ›´æ–°ä¸€ä¸‹ï¼Œé˜²æ­¢slider barå›è·³
 		mutex.unlock();
 		cout << "[SEEK] vPts after seek: " << currentVPtsMs << endl;
 		return true;
@@ -439,7 +499,7 @@ bool XFFmpeg::seek(float pos) {
 		mutex.unlock();
 		cout << "[SEEK] av_seek_frame error: " << get_error(re) << endl;
 		return false;
-	}	
+	}
 }
 
 bool XFFmpeg::create_decoder(AVFormatContext* ic) {
@@ -451,34 +511,34 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 	}
 	cout << "[CREATE DECODER] Total stream numbers: " << ic->nb_streams << endl;
 #if 0
-	//»ñÈ¡ÒôÊÓÆµÁ÷ĞÅÏ¢£¨±éÀú¡¢º¯Êı»ñÈ¡£©
+	//è·å–éŸ³è§†é¢‘æµä¿¡æ¯ï¼ˆéå†ã€å‡½æ•°è·å–ï¼‰
 	for (int i = 0; i < ic->nb_streams; i++) {
 		AVStream* as = ic->streams[i];
 
 		if (as->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
 			audioStream = i;
-			cout << i << " ÒôÆµĞÅÏ¢" << endl;
+			cout << i << " éŸ³é¢‘ä¿¡æ¯" << endl;
 			cout << "  - sample rate: " << as->codecpar->sample_rate << endl;
 			cout << "  - channels: " << as->codecpar->channels << endl;
-			cout << "  - format: " << as->codecpar->format << endl;  // ÒôÆµ AVSampleFormat Ã¶¾ÙÀàĞÍ£¬±ÈÈçunsigned 8 bits planar£¬signed 16 bits planar£¬float planarµÈµÈ
-			cout << "  - codec_id: " << as->codecpar->codec_id << endl;  // ±ÈÈçAV_CODEC_ID_AAC£¬AV_CODEC_ID_MP3µÈµÈ
-			cout << "  - audio frame size: " << as->codecpar->frame_size << endl;  //Ò»Ö¡Êı¾İ  µ¥Í¨µÀÑù±¾Êı£¨¼ÙÉèÎª1024£©
-			//Èç¹ûÊÇË«Í¨µÀ£¨as->codecpar->channels == 2£©£¬ÔòÒ»Ö¡Êı¾İframe sizeÊÇas->codecpar->frame_size * 2 * byte per sample = 1024*2*2(¼ÙÉèÎª16Î»)=4096×Ö½Ú
-			//ÔòÒôÆµÖ¡ÂÊ fps=as->codecpar->sample_rate*2/frame size = 48000*2/4096 = 23.4375£¬¸úÊÓÆµÖ¡ÂÊ²»Ò»¶¨ÏàµÈ
+			cout << "  - format: " << as->codecpar->format << endl;  // éŸ³é¢‘ AVSampleFormat æšä¸¾ç±»å‹ï¼Œæ¯”å¦‚unsigned 8 bits planarï¼Œsigned 16 bits planarï¼Œfloat planarç­‰ç­‰
+			cout << "  - codec_id: " << as->codecpar->codec_id << endl;  // æ¯”å¦‚AV_CODEC_ID_AACï¼ŒAV_CODEC_ID_MP3ç­‰ç­‰
+			cout << "  - audio frame size: " << as->codecpar->frame_size << endl;  //ä¸€å¸§æ•°æ®  å•é€šé“æ ·æœ¬æ•°ï¼ˆå‡è®¾ä¸º1024ï¼‰
+			//å¦‚æœæ˜¯åŒé€šé“ï¼ˆas->codecpar->channels == 2ï¼‰ï¼Œåˆ™ä¸€å¸§æ•°æ®frame sizeæ˜¯as->codecpar->frame_size * 2 * byte per sample = 1024*2*2(å‡è®¾ä¸º16ä½)=4096å­—èŠ‚
+			//åˆ™éŸ³é¢‘å¸§ç‡ fps=as->codecpar->sample_rate*2/frame size = 48000*2/4096 = 23.4375ï¼Œè·Ÿè§†é¢‘å¸§ç‡ä¸ä¸€å®šç›¸ç­‰
 		}
 		else if (as->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
 			videoStream = i;
-			cout << i << " ÊÓÆµĞÅÏ¢" << endl;
+			cout << i << " è§†é¢‘ä¿¡æ¯" << endl;
 			cout << "  - width: " << as->codecpar->width << endl;
 			cout << "  - height: " << as->codecpar->height << endl;
-			cout << "  - format: " << as->codecpar->format << endl;  // ÊÓÆµ AVPixelFormat Ã¶¾ÙÀàĞÍ
-			cout << "  - codec_id: " << as->codecpar->codec_id << endl;  // ±ÈÈçAV_CODEC_ID_H264µÈµÈ
-			cout << "  - video frame size: " << as->codecpar->frame_size << endl;  // ÊÓÆµÕâ¸öÖµÎª0
+			cout << "  - format: " << as->codecpar->format << endl;  // è§†é¢‘ AVPixelFormat æšä¸¾ç±»å‹
+			cout << "  - codec_id: " << as->codecpar->codec_id << endl;  // æ¯”å¦‚AV_CODEC_ID_H264ç­‰ç­‰
+			cout << "  - video frame size: " << as->codecpar->frame_size << endl;  // è§†é¢‘è¿™ä¸ªå€¼ä¸º0
 		}
 	}
 #else
-	//º¯Êı»ñÈ¡videoStreamºÍaudioStream£¬È»ºó´úÈëµ½ic->streams[i]ÖĞ»ñÈ¡¸÷¸öÁ÷µÄĞÅÏ¢£¬¾Í²»ÓÃ±éÀúÁË
-	videoStream = av_find_best_stream(ic, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);  // µ¹ÊıµÚ¶ş¸ö²ÎÊı´«NULLÊÇÒòÎª·â×°ºÍ½âÂë¸ôÀë¿ª²»ñîºÏ£¿
+	//å‡½æ•°è·å–videoStreamå’ŒaudioStreamï¼Œç„¶åä»£å…¥åˆ°ic->streams[i]ä¸­è·å–å„ä¸ªæµçš„ä¿¡æ¯ï¼Œå°±ä¸ç”¨éå†äº†
+	videoStream = av_find_best_stream(ic, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);  // å€’æ•°ç¬¬äºŒä¸ªå‚æ•°ä¼ NULLæ˜¯å› ä¸ºå°è£…å’Œè§£ç éš”ç¦»å¼€ä¸è€¦åˆï¼Ÿ
 	audioStream = av_find_best_stream(ic, AVMEDIA_TYPE_AUDIO, -1, -1, NULL, 0);
 #endif
 
@@ -486,8 +546,8 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 	cout << "[CREATE DECODER] audioStream = " << audioStream << endl;
 
 	if (videoStream >= 0) {
-		/************************************ ÊÓÆµ½âÂëÆ÷²¿·Ö ************************************/
-		//ÕÒµ½ÊÓÆµ½âÂëÆ÷
+		/************************************ è§†é¢‘è§£ç å™¨éƒ¨åˆ† ************************************/
+		//æ‰¾åˆ°è§†é¢‘è§£ç å™¨
 		AVCodec* vcodec = avcodec_find_decoder(ic->streams[videoStream]->codecpar->codec_id);
 		if (!vcodec) {
 			cout << "[CREATE DECODER] Can't find the video codec id " << ic->streams[videoStream]->codecpar->codec_id << endl;
@@ -497,21 +557,21 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 			cout << "[CREATE DECODER] Find the vcodec " << ic->streams[videoStream]->codecpar->codec_id << endl;
 		}
 
-		//´´½¨½âÂëÆ÷ÉÏÏÂÎÄ
+		//åˆ›å»ºè§£ç å™¨ä¸Šä¸‹æ–‡
 		if (vc == NULL) { vc = avcodec_alloc_context3(vcodec); }
 
-		//ÅäÖÃ½âÂëÆ÷ÉÏÏÂÎÄ²ÎÊı
-		//ĞÂ°æ±¾ÒÑ¾­½«AVStream½á¹¹ÌåÖĞµÄAVCodecContext×Ö¶Î¶¨ÒåÎª·ÏÆúÊôĞÔ¡£
-		//Òò´ËÎŞ·¨Ïñ¾ÉµÄ°æ±¾Ö±½ÓÍ¨¹ıAVFormatContext»ñÈ¡µ½AVCodecContext½á¹¹Ìå²ÎÊı
-		//µ±Ç°°æ±¾±£´æÊÓÒôÆµÁ÷ĞÅÏ¢µÄ½á¹¹ÌåAVCodecParameters£¬FFmpegÌá¹©ÁËº¯Êıavcodec_parameters_to_context
-		//½«ÒôÊÓÆµÁ÷ĞÅÏ¢¿½±´µ½ĞÂµÄAVCodecContext½á¹¹ÌåÖĞ
+		//é…ç½®è§£ç å™¨ä¸Šä¸‹æ–‡å‚æ•°
+		//æ–°ç‰ˆæœ¬å·²ç»å°†AVStreamç»“æ„ä½“ä¸­çš„AVCodecContextå­—æ®µå®šä¹‰ä¸ºåºŸå¼ƒå±æ€§ã€‚
+		//å› æ­¤æ— æ³•åƒæ—§çš„ç‰ˆæœ¬ç›´æ¥é€šè¿‡AVFormatContextè·å–åˆ°AVCodecContextç»“æ„ä½“å‚æ•°
+		//å½“å‰ç‰ˆæœ¬ä¿å­˜è§†éŸ³é¢‘æµä¿¡æ¯çš„ç»“æ„ä½“AVCodecParametersï¼ŒFFmpegæä¾›äº†å‡½æ•°avcodec_parameters_to_context
+		//å°†éŸ³è§†é¢‘æµä¿¡æ¯æ‹·è´åˆ°æ–°çš„AVCodecContextç»“æ„ä½“ä¸­
 		avcodec_parameters_to_context(vc, ic->streams[videoStream]->codecpar);
 
-		//4Ïß³Ì½âÂë
-		//Ò²¿ÉÒÔÏÈÍ¨¹ılinux»òÕßWindows APIÀ´»ñÈ¡CPU¸öÊı½ø¶ø¾ö¶¨½âÂëÏß³ÌÊı
+		//4çº¿ç¨‹è§£ç 
+		//ä¹Ÿå¯ä»¥å…ˆé€šè¿‡linuxæˆ–è€…Windows APIæ¥è·å–CPUä¸ªæ•°è¿›è€Œå†³å®šè§£ç çº¿ç¨‹æ•°
 		vc->thread_count = 4;
 
-		//´ò¿ª½âÂëÆ÷ÉÏÏÂÎÄ
+		//æ‰“å¼€è§£ç å™¨ä¸Šä¸‹æ–‡
 		re = avcodec_open2(vc, 0, 0);
 		if (0 != re) {
 			avcodec_free_context(&vc);
@@ -524,8 +584,8 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 	}
 
 	if (audioStream >= 0) {
-		/************************************ ÒôÆµ½âÂëÆ÷²¿·Ö ************************************/
-		//ÕÒµ½ÒôÆµ½âÂëÆ÷
+		/************************************ éŸ³é¢‘è§£ç å™¨éƒ¨åˆ† ************************************/
+		//æ‰¾åˆ°éŸ³é¢‘è§£ç å™¨
 		AVCodec* acodec = avcodec_find_decoder(ic->streams[audioStream]->codecpar->codec_id);
 		if (!acodec) {
 			cout << "[CREATE DECODER] Can't find the audio codec id " << ic->streams[audioStream]->codecpar->codec_id << endl;
@@ -535,18 +595,18 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 			cout << "[CREATE DECODER] Find the acodec " << ic->streams[audioStream]->codecpar->codec_id << endl;
 		}
 
-		//´´½¨½âÂëÆ÷ÉÏÏÂÎÄ
+		//åˆ›å»ºè§£ç å™¨ä¸Šä¸‹æ–‡
 		if (ac == NULL) { ac = avcodec_alloc_context3(acodec); }
 
-		//ÅäÖÃ½âÂëÆ÷ÉÏÏÂÎÄ²ÎÊı
+		//é…ç½®è§£ç å™¨ä¸Šä¸‹æ–‡å‚æ•°
 		avcodec_parameters_to_context(ac, ic->streams[audioStream]->codecpar);
 
-		//4Ïß³Ì½âÂë
+		//4çº¿ç¨‹è§£ç 
 		ac->thread_count = 4;
 
-		//´ò¿ª½âÂëÆ÷ÉÏÏÂÎÄ
+		//æ‰“å¼€è§£ç å™¨ä¸Šä¸‹æ–‡
 		/*
-			¶ÔÓÚavcodec_open2º¯ÊıµÄµÚ¶ş¸ö²ÎÊı£¬If a non-NULL codec has been previously passed to
+			å¯¹äºavcodec_open2å‡½æ•°çš„ç¬¬äºŒä¸ªå‚æ•°ï¼ŒIf a non-NULL codec has been previously passed to
 			avcodec_alloc_context3() or for this context, then this parameter MUST be either NULL
 			or equal to the previously passed codec.
 		 */
@@ -579,7 +639,7 @@ bool XFFmpeg::create_decoder(AVFormatContext* ic) {
 }
 
 /*
-	Èç¹ûpktÊÇ¿ÕµÄ£¬·µ»Øµ±Ç°ÒÑ¾­½âÂëµÄ×îĞÂÊÓÆµÖ¡µÄpts£¬·ñÔò·µ»Øpkt°üËùÖ¸ÊÓÆµÖ¡µÄpts
+	å¦‚æœpktæ˜¯ç©ºçš„ï¼Œè¿”å›å½“å‰å·²ç»è§£ç çš„æœ€æ–°è§†é¢‘å¸§çš„ptsï¼Œå¦åˆ™è¿”å›pktåŒ…æ‰€æŒ‡è§†é¢‘å¸§çš„pts
 */
 int XFFmpeg::get_current_video_pts(AVPacket* pkt) {
 	mutex.lock();
@@ -589,7 +649,7 @@ int XFFmpeg::get_current_video_pts(AVPacket* pkt) {
 	if (NULL == pkt) {
 		pts = currentVPtsMs;
 	}
-	else {		
+	else {
 		if (!ic)
 		{
 			mutex.unlock();
@@ -633,49 +693,197 @@ void XFFmpeg::clean() {
 	currentAPtsMs = 0;
 	currentVPtsMs = 0;
 	fps = 0;
+	finterval = -1.0;
 	bSendFlushPacket = false;
 	videoStream = -1;
 	audioStream = -1;
 	error_buf[0] = '\0';
 }
 
+/*
+	åˆå§‹åŒ–ä¸€ä¸ªAVFrameå¯¹è±¡çš„ç¼“å­˜æ± ï¼Œè¿™äº›å¯¹è±¡ç”¨äºå­˜æ”¾è§£ç åå¾—åˆ°çš„YUVå›¾åƒï¼Œ
+	æ± çš„å¤§å°æ˜¯max_buffered_yuv_frame_numï¼Œ0è¡¨ç¤ºè¿™ä¸ªAVFrameå¯¹è±¡    æ˜¯ç©ºé—²çš„ï¼Œ
+	å¯ä»¥å­˜æ”¾æ–°è¿›æ¥çš„è§£ç å¸§ã€‚
+*/
+bool XFFmpeg::init_yuv_pool() {
+	for (int j = 0; j < max_buffered_yuv_frame_num; j++) {
+		AVFrame* frame = av_frame_alloc();
+		yuvPool[0][j] = 0;
+		yuvPool[1][j] = (unsigned int)frame;
+	}
+	return true;
+}
+
+AVFrame* XFFmpeg::get_yuv_frame_decode() {
+	static clock_t last = 0;
+    int idx = -1;
+	int64_t vPts = -1;
+	int64_t aPts = get_current_audio_pts();
+	AVFrame* ret = nullptr;
+    clock_t cur = clock();
+
+	get_minimum_frame_pts(&idx);
+
+	if (idx == -1) {
+		cout << "@@@ Get yuv frame to decode failed! aPts= " << aPts << endl;
+		return nullptr;
+	}
+	ret = (AVFrame*)yuvPool[1][idx];
+
+	compute_current_pts(ret, videoStream);  //è®¡ç®—è§†é¢‘å½“å‰æœ€å°çš„ptsï¼Œä¹Ÿå³æœ€å¿«è¦æ’­æ”¾çš„é‚£ä¸€å¸§çš„pts
+	vPts = get_current_video_pts(NULL);
+	cout << "!! 1 Get yuv to decode! idx= " << idx << ", aPts= " << aPts << ", vPts=" << vPts << endl;
+
+	// å¦‚æœåª’ä½“æ–‡ä»¶ä¸­çš„éŸ³é¢‘æ˜¯åœ¨å‡ åˆ†é’Ÿä¹‹åæ‰å‡ºç°æ—¶(aPts<=0è¡¨ç¤ºè¿˜æ²¡æœ‰å‡ºç°éŸ³é¢‘åŒ…)ï¼Œå‰é¢å‡ åˆ†é’Ÿçš„è§†é¢‘è¦èƒ½å¤Ÿæ’­æ”¾
+	if (aPts <= 0) {
+		cout << "[" << 1000.0 * (cur - last) / (double)CLOCKS_PER_SEC << "]!! 2-1 Get yuv to decode OK! idx= " << idx << ", aPts= " << aPts << ", vPts=" << vPts << endl;
+        last = cur;
+		return ret;
+	}
+	else {
+		// åˆ©ç”¨éŸ³é¢‘åŒæ­¥ä¸Šäº†è§†é¢‘
+		if (vPts <= aPts) {
+			cout << "[" << 1000.0 * (cur - last) / (double)CLOCKS_PER_SEC << "]!! 2-2 Get yuv to decode OK! idx= " << idx << ", aPts= " << aPts << ", vPts=" << vPts << endl;
+            last = cur;
+            return ret;
+		}
+		else {
+			// å¦‚æœä¸Šä¸€ä¸ªéŸ³é¢‘åŒ…æ’­æ”¾å®Œæ¯•åæ²¡æœ‰å†å‡ºç°éŸ³é¢‘åŒ…ï¼Œåˆ™è¿™ä¸ªæ¡ä»¶æ»¡è¶³æ—¶ç»§ç»­æ’­æ”¾è§†é¢‘
+			if (finterval > 0 && 1000.0 * (cur - last) / (double)CLOCKS_PER_SEC >= finterval) {
+				cout << "[" << 1000.0 * (cur - last) / (double)CLOCKS_PER_SEC << "]!! 2-3 Get yuv to decode OK! idx= " << idx << ", aPts= " << aPts << ", vPts=" << vPts << endl;
+                last = cur;
+                return ret;
+			}
+			else
+			{
+				cout << "!! 2-4 Getting yuv to decode... finterval " << finterval << endl;
+				return nullptr;
+			}
+		}
+	}
+}
+
+/*
+	ä»AVFrameå¯¹è±¡ç¼“å­˜æ± ä¸­è·å–ä¸€ä¸ªç©ºé—²çš„AVFrameå¯¹è±¡ï¼Œç”¨æ¥å­˜æ”¾å½“å‰è§£ç å‡ºæ¥
+	çš„YUVæ•°æ®ï¼ŒåŒæ—¶æ ‡è®°è¯¥AVFrameå¯¹è±¡ä¸ºéç©ºé—²ï¼Œå¤±è´¥è¿”å›ç©ºæŒ‡é’ˆã€‚
+*/
+AVFrame* XFFmpeg::get_yuv_frame() {
+	AVFrame* ret = nullptr;
+
+	for (int j = 0; j < max_buffered_yuv_frame_num; j++) {
+		poolmutex.lock();
+		if (yuvPool[0][j] == 0) {
+			yuvPool[0][j] = 1;
+			ret = (AVFrame*)yuvPool[1][j];
+			poolmutex.unlock();
+			cout << "------>get_yuv_frame OK, idx= " << j << endl;
+			break;
+		}
+		poolmutex.unlock();
+	}
+
+	return ret;
+}
+
+/*
+	é‡Šæ”¾å æœ‰çš„AVFrameå¯¹è±¡(æ³¨æ„ï¼šAVFrameå¯¹è±¡ä¸­çš„bufç©ºé—´ä¸è´Ÿè´£é‡Šæ”¾)
+*/
+bool XFFmpeg::release_yuv_frame(AVFrame* frame) {
+	for (int j = 0; j < max_buffered_yuv_frame_num; j++) {
+		poolmutex.lock();
+		if (yuvPool[0][j] == 1 && yuvPool[1][j] == (unsigned int)frame) {
+			yuvPool[0][j] = 0;
+			poolmutex.unlock();
+			cout << "<------release_yuv_frame, index = " << j << endl;
+			return true;
+		}
+		poolmutex.unlock();
+	}
+
+	return false;
+}
+
+/*
+	è·å–å½“å‰AVFrameç¼“å­˜æ± ä¸­æœ€å°çš„pts
+	indexè¿”å›æœ€å°ptså¯¹åº”çš„AVFrameåœ¨ç¼“å­˜æ± ä¸­çš„ä¸‹æ ‡
+*/
+int64_t XFFmpeg::get_minimum_frame_pts(int* index) {
+	int64_t min = 0x7fffffffffffffff;
+	AVFrame* frame = nullptr;
+	int idx = -1;
+
+	for (int j = 0; j < max_buffered_yuv_frame_num; j++) {
+		poolmutex.lock();
+		frame = (AVFrame*)yuvPool[1][j];
+		if (yuvPool[0][j] == 1 && frame->best_effort_timestamp < min) {
+			min = frame->best_effort_timestamp;
+			idx = j;
+		}
+		poolmutex.unlock();
+	}
+	if (index) *index = idx;
+	return min;
+}
+
+bool XFFmpeg::clear_yuv_pool() {
+	poolmutex.lock();
+	for (int j = 0; j < max_buffered_yuv_frame_num; j++) {
+		AVFrame* frame = (AVFrame*)yuvPool[1][j];
+		av_frame_free(&frame);
+		yuvPool[0][j] = 0;
+		yuvPool[1][j] = 0;
+	}
+	poolmutex.unlock();
+	return true;
+}
+
+void XFFmpeg::reset_on_seek() {
+	poolmutex.lock();
+	for (int j = 0; j < max_buffered_yuv_frame_num; j++) {
+		AVFrame* frame = (AVFrame*)yuvPool[1][j];
+		yuvPool[0][j] = 0;
+		av_frame_unref(frame);
+	}
+	poolmutex.unlock();
+}
+
 void XFFmpeg::close() {
 	mutex.lock();
 	if (ic) avformat_close_input(&ic);
-	if (vc) { 
+	if (vc) {
 		avcodec_close(vc);
-		avcodec_free_context(&vc); 
+		avcodec_free_context(&vc);
 	}
-	if (ac) { 
+	if (ac) {
 		avcodec_close(ac);
 		avcodec_free_context(&ac);
 	}
-	if (vSwsCtx) { 
-		sws_freeContext(vSwsCtx); 
+	if (vSwsCtx) {
+		sws_freeContext(vSwsCtx);
 		vSwsCtx = NULL;
 	}
 	if (aSwrCtx) { swr_free(&aSwrCtx); }
 	if (packet) av_packet_free(&packet);
-	if (yuv) av_frame_free(&yuv);
+	clear_yuv_pool();
 	if (pcm) av_frame_free(&pcm);
 	clean();
 	mutex.unlock();
 }
 
-std::string XFFmpeg::get_error(int error_num) {	
+std::string XFFmpeg::get_error(int error_num) {
 	mutex.lock();
 	av_strerror(error_num, error_buf, error_len - 1);
-	std::string re = this->error_buf;  // °ÑÒ»¸öchar*¸³Öµ¸østring¶ÔÏóÊ±»á¸´ÖÆÒ»·İ£¬ÓÃÒ»¸ö¸´ÖÆµÄ¿Õ¼ä±ÜÃâ¶àÏß³Ì·ÃÎÊ³öÏÖÒì³£
+	std::string re = this->error_buf;  // æŠŠä¸€ä¸ªchar*èµ‹å€¼ç»™stringå¯¹è±¡æ—¶ä¼šå¤åˆ¶ä¸€ä»½ï¼Œç”¨ä¸€ä¸ªå¤åˆ¶çš„ç©ºé—´é¿å…å¤šçº¿ç¨‹è®¿é—®å‡ºç°å¼‚å¸¸
 	mutex.unlock();
 	return re;
 }
 
 XFFmpeg::XFFmpeg() {
-	//´íÎóĞÅÏ¢»º´æ³õÊ¼»¯
+	//é”™è¯¯ä¿¡æ¯ç¼“å­˜åˆå§‹åŒ–
 	error_buf[0] = '\0';
-	//³õÊ¼»¯·â×°¿â£¨ÆäÊµ×îĞÂ°æ±¾Õâ¸öº¯ÊıÒÑ±»·ÏÆú£¬µ÷ÓÃ»á²úÉú±»ÉùÃ÷ÎªÒÑ·ñ¾öµÄ´íÎó£©
+	//åˆå§‹åŒ–å°è£…åº“ï¼ˆå…¶å®æœ€æ–°ç‰ˆæœ¬è¿™ä¸ªå‡½æ•°å·²è¢«åºŸå¼ƒï¼Œè°ƒç”¨ä¼šäº§ç”Ÿè¢«å£°æ˜ä¸ºå·²å¦å†³çš„é”™è¯¯ï¼‰
 	av_register_all();
-	//³õÊ¼»¯ÍøÂç¿â£¬¿ÉÒÔ´ò¿ªrtsp¡¢rtmp¡¢httpµÈĞ­ÒéµÄÁ÷Ã½ÌåÊÓÆµ
+	//åˆå§‹åŒ–ç½‘ç»œåº“ï¼Œå¯ä»¥æ‰“å¼€rtspã€rtmpã€httpç­‰åè®®çš„æµåª’ä½“è§†é¢‘
 	avformat_network_init();
 }
 
