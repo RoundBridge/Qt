@@ -53,6 +53,7 @@ protected:
 	bool clear_yuv_pool();
 	bool init_yuv_pool();
 	AVFrame* get_yuv_frame();
+    void set_yuv_frame_state(AVFrame* frame, int state);
     int64_t get_minimum_frame_pts(int* index);
 	bool release_yuv_frame(AVFrame* frame);
 	AVFrame* get_yuv_frame_decode();

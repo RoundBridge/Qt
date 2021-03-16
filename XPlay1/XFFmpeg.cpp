@@ -12,6 +12,8 @@ using std::endl;
 #pragma comment(lib, "swscale.lib")
 #pragma comment(lib, "swresample.lib")
 
+enum {frame_free=0, frame_occupy, frame_yuv, frame_converting};
+
 int XFFmpeg::open(const char* path) {
 	//先关闭现有的资源
 	close();
@@ -98,7 +100,7 @@ AVPacket* XFFmpeg::read() {
 bool XFFmpeg::decode(const AVPacket* pkt) {
 	AVCodecContext* cc = NULL;
 	AVFrame* frame = NULL;
-	bool isAPkt = false;
+	bool isVPkt = false;
 
 	if (!pkt || pkt->size <= 0 || !pkt->data) {
 		return false;
@@ -111,6 +113,7 @@ bool XFFmpeg::decode(const AVPacket* pkt) {
 
 	if (pkt->stream_index == videoStream) {
 		cc = vc;
+        isVPkt = true;
 		if (nullptr == (frame = get_yuv_frame())) {
 			mutex.unlock();
 			//cout << "[DECODE] get_yuv_frame failed!" << endl;
@@ -119,12 +122,12 @@ bool XFFmpeg::decode(const AVPacket* pkt) {
 		else
 		{
 			//cout << "[DECODE] get_yuv_frame OK!" << endl;
+			printf("dec v pkt pts %lld.\n", pkt->pts);
 		}
 	}
 	else if (pkt->stream_index == audioStream) {
 		cc = ac;
 		frame = pcm;
-		isAPkt = true;
 	}
 	else {
 		mutex.unlock();
@@ -138,8 +141,8 @@ bool XFFmpeg::decode(const AVPacket* pkt) {
 	int re = avcodec_send_packet(cc, pkt);
 	if (0 != re) {
 		mutex.unlock();
-		release_yuv_frame(frame);
-		cout << "[DECODE] avcodec_send_packet failed: " << get_error(re) << endl;
+		if (isVPkt) set_yuv_frame_state(frame, frame_free);
+		cout << "[DECODE] avcodec_send_packet(" << (isVPkt ? "video" : "audio") << ") failed: " << get_error(re) << endl;
 		return false;
 	}
 	// 只是从解码线程中获取解码结果，几乎不占用CPU，一次send（一次可能发送多个音频帧）可能对应多次receive
@@ -147,26 +150,23 @@ bool XFFmpeg::decode(const AVPacket* pkt) {
 	// 下面avcodec_receive_frame的第一个参数不能用ic->streams[pkt->stream_index]->codec了，因为它已经是
 	// 废弃属性了，用它的话，函数调用失败
 	re = avcodec_receive_frame(cc, frame);
-	if (re == 0) {
+	if (re >= 0) {
 		mutex.unlock();
+        set_yuv_frame_state(frame, frame_yuv);
+        return true;
 	}
 	else if (re == AVERROR(EAGAIN)) { // output is not available in this state, user must try to send new input
 		mutex.unlock();
-		release_yuv_frame(frame);
-		cout << "[DECODE] avcodec_receive_frame EAGAIN: " << get_error(re) << endl;
+		set_yuv_frame_state(frame, frame_free);
+		cout << "[DECODE] avcodec_receive_frame(" << (isVPkt ? "video" : "audio") << ") EAGAIN: " << get_error(re) << endl;
 		return true;
 	}
 	else {
 		mutex.unlock();
-		release_yuv_frame(frame);
+		set_yuv_frame_state(frame, frame_free);
 		cout << "[DECODE] avcodec_receive_frame failed: " << get_error(re) << endl;
 		return false;
 	}
-
-	if (isAPkt) //视频当前的pts等到convert显示时再计算
-		compute_current_pts(frame, pkt->stream_index);
-
-	return true;
 }
 
 AVFrame* XFFmpeg::get_buffered_frames() {
@@ -188,7 +188,7 @@ AVFrame* XFFmpeg::get_buffered_frames() {
 	re = avcodec_receive_frame(vc, frame);
 	if (0 != re) {
 		mutex.unlock();
-		release_yuv_frame(frame);
+		set_yuv_frame_state(frame, frame_free);
 		// the decoder has been fully flushed, and there will be no more output frames
 		if (AVERROR_EOF == re) {
 			XVideoThread::isStart = false;
@@ -203,6 +203,7 @@ AVFrame* XFFmpeg::get_buffered_frames() {
 		return NULL;
 	}
 	mutex.unlock();
+    set_yuv_frame_state(frame, frame_yuv);
 	//compute_current_pts(frame, videoStream);  //视频当前的pts等到convert显示时再计算
 	bufferedFramesCnt++;
 	return frame;
@@ -218,7 +219,7 @@ bool XFFmpeg::video_convert(uint8_t* const out, int out_w, int out_h, AVPixelFor
 	if (frame == nullptr ||
 		frame->width == 0 ||
 		frame->height == 0) {
-		release_yuv_frame(frame);
+		set_yuv_frame_state(frame, frame_free);
 		return false;
 	}
 
@@ -278,9 +279,10 @@ bool XFFmpeg::video_convert(uint8_t* const out, int out_w, int out_h, AVPixelFor
 		if (re != out_h) {
 			cout << "[VIDEO CONVERT] the height of sws_scale output is: " << re << ", the needed height is " << out_h << endl;
 			mutex.unlock();
+            set_yuv_frame_state(frame, frame_yuv);  // 这次转换没成功，下次再转换一遍
 			return false;
 		}
-		// 这次转换没成功，下次再做一遍
+
 		if (!release_yuv_frame(frame)) {
 			cout << "[VIDEO CONVERT] release_yuv_frame_buffer failed!" << endl;
 		}
@@ -288,8 +290,9 @@ bool XFFmpeg::video_convert(uint8_t* const out, int out_w, int out_h, AVPixelFor
 		return true;
 	}
 	else {
-		cout << "[VIDEO CONVERT] NO vSwsCtx available!" << endl;
 		mutex.unlock();
+        set_yuv_frame_state(frame, frame_yuv);
+        cout << "[VIDEO CONVERT] NO vSwsCtx available!" << endl;
 		return false;
 	}
 }
@@ -332,7 +335,10 @@ int XFFmpeg::audio_convert(uint8_t* const out) {
 	}
 	// Get the required buffer size for the given audio parameters(重采样后输出数据需要的空间大小).
 	re = av_samples_get_buffer_size(NULL, ac->channels, pcm->nb_samples, AV_SAMPLE_FMT_S16, 0);
+
 	mutex.unlock();
+
+	compute_current_pts(pcm, audioStream);
 	return re;
 }
 
@@ -340,9 +346,10 @@ void XFFmpeg::compute_current_pts(AVFrame* frame, int streamId) {
     int64_t stamp = -1;
 	double rate = 0.0;
 	int* temp = NULL;
+    bool isAFrm = false;
 
 	if (videoStream == streamId) { temp = &currentVPtsMs; }
-	else if (audioStream == streamId) { temp = &currentAPtsMs; }
+	else if (audioStream == streamId) { temp = &currentAPtsMs; isAFrm = true;}
 	else { return; }
 
 	if (frame == NULL)
@@ -386,8 +393,11 @@ void XFFmpeg::compute_current_pts(AVFrame* frame, int streamId) {
         else {
             // 注意这个条件判断是进得来的，这说明有个无数据的包（测试时发现音频经常有这种情况，难道是静音包！？）
 			if (!frame->buf[0]) {
-				cout << "[CURRENT PTS] AV_NOPTS_VALUE timestamp!!! With no ref buf!!! " << endl;
+				cout << "[CURRENT PTS] (" << (isAFrm ? "audio" : "video") << ") timestamp AV_NOPTS_VALUE!!! With no ref buf!!! pkt_dts=" << frame->pkt_dts << endl;
 			}
+            else {
+                cout << "[CURRENT PTS] (" << (isAFrm ? "audio" : "video") << ") timestamp AV_NOPTS_VALUE!!! pkt_dts=" << frame->pkt_dts << endl;
+            }
             mutex.unlock();
             return;
         }
@@ -400,8 +410,8 @@ void XFFmpeg::compute_current_pts(AVFrame* frame, int streamId) {
 		//cout << "[CURRENT PTS] V frame->pts/temp: " << frame->pts << "/" << *temp << endl;
 	}
 	else if (audioStream == streamId) {
-		//cout << "[CURRENT PTS] A ------ best_effort_timestamp: " << frame->best_effort_timestamp << endl;
-		//cout << "[CURRENT PTS] A frame->pts/temp: " << frame->pts << "/" << *temp << endl;
+		cout << "[CURRENT PTS] A ------ best_effort_timestamp: " << frame->best_effort_timestamp << endl;
+		cout << "[CURRENT PTS] A frame->pts/temp: " << frame->pts << "/" << *temp << endl;
 	}
 	else {
 
@@ -437,7 +447,7 @@ void XFFmpeg::compute_duration_ms() {
 	cout << "[DURATION] TotalAms: " << totalAms << " ms" << endl;
 	if (videoStream >= 0)cout << "[DURATION] In stream, Vduration/num/den: " << ic->streams[videoStream]->duration << "/" << ic->streams[videoStream]->time_base.num << "/" << ic->streams[videoStream]->time_base.den << endl;
 	if (audioStream >= 0)cout << "[DURATION] In stream, Aduration/num/den: " << ic->streams[audioStream]->duration << "/" << ic->streams[audioStream]->time_base.num << "/" << ic->streams[audioStream]->time_base.den << endl;
-	cout << "[DURATION] In ic,	   duration " << ic->duration << endl;
+	cout << "[DURATION] In ic, duration " << ic->duration << endl;
 
 	return;
 }
@@ -708,10 +718,25 @@ void XFFmpeg::clean() {
 bool XFFmpeg::init_yuv_pool() {
 	for (int j = 0; j < max_buffered_yuv_frame_num; j++) {
 		AVFrame* frame = av_frame_alloc();
-		yuvPool[0][j] = 0;
+		yuvPool[0][j] = frame_free;
 		yuvPool[1][j] = (unsigned int)frame;
 	}
 	return true;
+}
+
+void XFFmpeg::set_yuv_frame_state(AVFrame* frame, int state) {
+    if (!frame)
+        return;
+
+    poolmutex.lock();
+	for (int j = 0; j < max_buffered_yuv_frame_num; j++) {
+		if (yuvPool[1][j] == (unsigned int)frame) {
+			yuvPool[0][j] = (unsigned int)state;
+			break;
+		}
+	}
+    poolmutex.unlock();
+    return;
 }
 
 AVFrame* XFFmpeg::get_yuv_frame_decode() {
@@ -732,27 +757,31 @@ AVFrame* XFFmpeg::get_yuv_frame_decode() {
 
 	compute_current_pts(ret, videoStream);  //计算视频当前最小的pts，也即最快要播放的那一帧的pts
 	vPts = get_current_video_pts(NULL);
-	cout << "!! 1 Get yuv to decode! idx= " << idx << ", aPts= " << aPts << ", vPts=" << vPts << endl;
+	//cout << "!! 1 Get yuv to decode! idx= " << idx << ", aPts= " << aPts << ", vPts=" << vPts << endl;
 
 	// 如果媒体文件中的音频是在几分钟之后才出现时(aPts<=0表示还没有出现音频包)，前面几分钟的视频要能够播放
 	if (aPts <= 0) {
-		cout << "[" << 1000.0 * (cur - last) / (double)CLOCKS_PER_SEC << "]!! 2-1 Get yuv to decode OK! idx= " << idx << ", aPts= " << aPts << ", vPts=" << vPts << endl;
+        set_yuv_frame_state(ret, frame_converting);
+		cout << "[" << 1000.0 * (cur - last) / (double)CLOCKS_PER_SEC << "]!! 2-1 Get yuv OK! stream seq " << ret->coded_picture_number << ", display seq " << ret->display_picture_number << ", idx= " << idx << ", aPts= " << aPts << ", vPts=" << vPts << endl;  //display_picture_number有可能一直为0
         last = cur;
 		return ret;
 	}
 	else {
 		// 利用音频同步上了视频
 		if (vPts <= aPts) {
-			cout << "[" << 1000.0 * (cur - last) / (double)CLOCKS_PER_SEC << "]!! 2-2 Get yuv to decode OK! idx= " << idx << ", aPts= " << aPts << ", vPts=" << vPts << endl;
+            set_yuv_frame_state(ret, frame_converting);
+			cout << "[" << 1000.0 * (cur - last) / (double)CLOCKS_PER_SEC << "]!! 2-2 Get yuv OK! stream seq " << ret->coded_picture_number << ", display seq " << ret->display_picture_number << ", idx= " << idx << ", aPts= " << aPts << ", vPts=" << vPts << endl;
             last = cur;
             return ret;
 		}
 		else {
 			// 如果上一个音频包播放完毕后没有再出现音频包，则这个条件满足时继续播放视频
 			if (finterval > 0 && 1000.0 * (cur - last) / (double)CLOCKS_PER_SEC >= finterval) {
-				cout << "[" << 1000.0 * (cur - last) / (double)CLOCKS_PER_SEC << "]!! 2-3 Get yuv to decode OK! idx= " << idx << ", aPts= " << aPts << ", vPts=" << vPts << endl;
-                last = cur;
-                return ret;
+                //set_yuv_frame_state(ret, frame_converting);
+				//cout << "[" << 1000.0 * (cur - last) / (double)CLOCKS_PER_SEC << "]!! 2-3 Get yuv OK! stream seq " << ret->coded_picture_number << ", display seq " << ret->display_picture_number << ", idx= " << idx << ", aPts= " << aPts << ", vPts=" << vPts << endl;
+                //last = cur;
+                //return ret;
+                return nullptr;
 			}
 			else
 			{
@@ -772,11 +801,11 @@ AVFrame* XFFmpeg::get_yuv_frame() {
 
 	for (int j = 0; j < max_buffered_yuv_frame_num; j++) {
 		poolmutex.lock();
-		if (yuvPool[0][j] == 0) {
-			yuvPool[0][j] = 1;
+		if (yuvPool[0][j] == frame_free) {
+			yuvPool[0][j] = frame_occupy;
 			ret = (AVFrame*)yuvPool[1][j];
 			poolmutex.unlock();
-			cout << "------>get_yuv_frame OK, idx= " << j << endl;
+			//cout << "------>get_yuv_frame OK, idx= " << j << endl;
 			break;
 		}
 		poolmutex.unlock();
@@ -791,10 +820,10 @@ AVFrame* XFFmpeg::get_yuv_frame() {
 bool XFFmpeg::release_yuv_frame(AVFrame* frame) {
 	for (int j = 0; j < max_buffered_yuv_frame_num; j++) {
 		poolmutex.lock();
-		if (yuvPool[0][j] == 1 && yuvPool[1][j] == (unsigned int)frame) {
-			yuvPool[0][j] = 0;
+		if (yuvPool[0][j] == frame_converting && yuvPool[1][j] == (unsigned int)frame) {
+			yuvPool[0][j] = frame_free;
 			poolmutex.unlock();
-			cout << "<------release_yuv_frame, index = " << j << endl;
+			//cout << "<------release_yuv_frame, index = " << j << endl;
 			return true;
 		}
 		poolmutex.unlock();
@@ -815,7 +844,7 @@ int64_t XFFmpeg::get_minimum_frame_pts(int* index) {
 	for (int j = 0; j < max_buffered_yuv_frame_num; j++) {
 		poolmutex.lock();
 		frame = (AVFrame*)yuvPool[1][j];
-		if (yuvPool[0][j] == 1 && frame->best_effort_timestamp < min) {
+		if (yuvPool[0][j] == frame_yuv && frame->best_effort_timestamp < min) {
 			min = frame->best_effort_timestamp;
 			idx = j;
 		}
@@ -830,7 +859,7 @@ bool XFFmpeg::clear_yuv_pool() {
 	for (int j = 0; j < max_buffered_yuv_frame_num; j++) {
 		AVFrame* frame = (AVFrame*)yuvPool[1][j];
 		av_frame_free(&frame);
-		yuvPool[0][j] = 0;
+		yuvPool[0][j] = frame_free;
 		yuvPool[1][j] = 0;
 	}
 	poolmutex.unlock();
@@ -841,7 +870,7 @@ void XFFmpeg::reset_on_seek() {
 	poolmutex.lock();
 	for (int j = 0; j < max_buffered_yuv_frame_num; j++) {
 		AVFrame* frame = (AVFrame*)yuvPool[1][j];
-		yuvPool[0][j] = 0;
+		yuvPool[0][j] = frame_free;
 		av_frame_unref(frame);
 	}
 	poolmutex.unlock();
