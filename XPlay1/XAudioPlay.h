@@ -12,6 +12,7 @@ public:
 	virtual bool stop() = 0;
 	virtual bool play(bool isPlay) = 0;
 	virtual int get_free_buffer_size() = 0;
+	virtual int get_buffer_size() = 0;
 	virtual bool write(const char* data, int dataSize) = 0;
 
 	/*
@@ -42,6 +43,7 @@ public:
 	bool stop();
 	bool play(bool isPlay);
 	int get_free_buffer_size();
+	int get_buffer_size();
 	bool write(const char* data, int dataSize);
 	AudioPlay();
 };

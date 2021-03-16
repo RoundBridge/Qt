@@ -94,6 +94,22 @@ int AudioPlay::get_free_buffer_size() {
 		return free;
 	}
 }
+/*
+	返回音频输出写缓存的大小
+*/
+int AudioPlay::get_buffer_size() {
+	mutex.lock();
+	if (!output)
+	{
+		mutex.unlock();
+		return 0;
+	}
+	else {
+		int size = output->bufferSize();
+		mutex.unlock();
+		return size;
+	}
+}
 
 bool AudioPlay::write(const char* data, int dataSize) {
 	mutex.lock();
