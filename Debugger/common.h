@@ -28,4 +28,26 @@ typedef enum {
     QD_MESSAGE_TYPE_BINARY = 2,         //二进制类型，用于升级
 } QDMessageType;
 
+typedef enum {
+    EXE_SUCCESS = 0,            //成功执行
+    EXE_FAIL,                   //执行失败
+    EXE_EXECUTING,              //执行中
+    EXE_ABNORMAL,               //异常
+    EXE_WAIT                    //等待执行
+} ExecuteState;
+
+typedef struct {
+    int32_t motorStripCurrent; //mA
+    int32_t motorClampCurrent; //mA
+    int32_t motorKnifeCurrent; //mA
+    int32_t voltageStrip;      //mV
+    int32_t voltageActuator;   //mV
+    //...
+} ActuatorState;
+
+typedef enum {
+    ACTUATOR_STATE = 1,
+    BYPASS_GRIPPER_STATE = 2,
+} ParamKeyOpt;
+
 #endif // COMMON_H

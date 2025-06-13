@@ -105,21 +105,29 @@ class Actuator : public End
 public:
     Actuator(Controller* c, const char* remoteIp, quint16 remotePort, Link* link, int id = End_actuator);
 
+    virtual void updateEndExeState(uint32_t endCmd, uint32_t seq, uint32_t state);
+    virtual void parseExtraInfo(uint32_t endCmd, QJsonObject &e);
+    virtual bool setParam(uint32_t key, void* data, uint32_t dataLen);
+    virtual bool getParam(uint32_t key, void* data, uint32_t dataLen);
     virtual uint32_t getMappedCmd(uint32_t ctrlCmd);
     virtual bool processCmd(uint32_t ctrlCmd);
     virtual bool reConnect();
     virtual bool query();
 
 private:
+    void parseStripperQueryInfo(QJsonObject& e);
+    void parseQueryInfo(QJsonObject& e);
     bool stop();
     bool recover();
     bool pause();
     bool resume();
+    bool prepareStrip();
     bool makeCmdAndSend(uint32_t c, int32_t msgType, QJsonObject& extra, QByteArray& byte);
 
 private:
     uint32_t mCmd, mSeq;
     quint16 mRemotePort;
+    ActuatorState mRemoteState;
     QHostAddress mRemoteIp;
     Link* mLink;
 };

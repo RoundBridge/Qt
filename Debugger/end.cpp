@@ -21,13 +21,14 @@ End::End(Controller* c, int id) {
     mCtrl = c;
     mConnectState = Link_Unknown;
     mHeartBeatMs = 0;
+    mExeState = EXE_SUCCESS;
 }
 
 End::~End() {
 
 }
 
-void End::updateEndState(bool valid, qint64 ms) {
+void End::updateEndConnectState(bool valid, qint64 ms) {
     if (valid) {
         mHeartBeatMs = ms;
         mConnectState = Link_Connect;
@@ -47,6 +48,24 @@ bool End::execute(uint32_t ctrlCmd) {
         return false;
     }
     return processCmd(ctrlCmd);
+}
+
+void End::updateEndExeState(uint32_t endCmd, uint32_t seq, uint32_t state) {
+    (void)endCmd; (void)seq; (void)state;
+}
+
+bool End::setParam(uint32_t key, void* data, uint32_t dataLen) {
+    (void)key; (void)data; (void)dataLen;
+    return false;
+}
+
+bool End::getParam(uint32_t key, void* data, uint32_t dataLen) {
+    (void)key; (void)data; (void)dataLen;
+    return false;
+}
+
+void End::parseExtraInfo(uint32_t endCmd, QJsonObject &e) {
+    (void)endCmd; (void)e;
 }
 
 uint32_t End::getMappedCmd(uint32_t ctrlCmd) {

@@ -17,8 +17,12 @@ public:
     bool execute(uint32_t ctrlCmd);
     int getId() const {return mEndId;}
     bool isConnect() const {return mConnectState == Link_Connect;}
-    void updateEndState(bool valid, qint64 ms);
+    void updateEndConnectState(bool valid, qint64 ms);
 
+    virtual void updateEndExeState(uint32_t endCmd, uint32_t seq, uint32_t state);
+    virtual void parseExtraInfo(uint32_t endCmd, QJsonObject &e);
+    virtual bool setParam(uint32_t key, void* data, uint32_t dataLen);
+    virtual bool getParam(uint32_t key, void* data, uint32_t dataLen);
     virtual uint32_t getMappedCmd(uint32_t ctrlCmd);
     virtual bool processCmd(uint32_t ctrlCmd);
     virtual bool reConnect();
@@ -26,6 +30,7 @@ public:
 
     int mEndId;
     int mConnectState;
+    uint32_t mExeState;     //命令执行状态
     qint64 mHeartBeatMs;
     qint64 mLastReconnectMs;
     Controller* mCtrl;

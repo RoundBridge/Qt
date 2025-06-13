@@ -1,3 +1,4 @@
+#include <string.h>
 #include "crc.h"
 #include "controller.h"
 #include "actuator.h"
@@ -8,6 +9,33 @@ Actuator::Actuator(Controller* c, const char* remoteIp, quint16 remotePort, Link
     mRemotePort = remotePort;
     mRemoteIp.setAddress(remoteIp);
     mLink = link;
+    memset(&mRemoteState, 0, sizeof(mRemoteState));
+}
+
+bool Actuator::setParam(uint32_t key, void* data, uint32_t dataLen) {
+    (void)key; (void)data; (void)dataLen;
+    return false;
+}
+
+bool Actuator::getParam(uint32_t key, void* data, uint32_t dataLen) {
+    (void)key; (void)data; (void)dataLen;
+    return false;
+}
+
+void Actuator::parseExtraInfo(uint32_t endCmd, QJsonObject &e) {
+    if (endCmd == CMD_MAIN_ACTUATOR_QUERY) {
+        parseQueryInfo(e);
+    }
+}
+
+void Actuator::updateEndExeState(uint32_t endCmd, uint32_t seq, uint32_t state) {
+    qDebug() << "Actuator current cmd " << mCmd << " seq " << mSeq << ", response cmd " << endCmd << " seq " << seq << " state " << state;
+    if (mCmd == endCmd && mSeq+1 == seq) {
+        mExeState = state & 0xF;
+        if (mExeState == EXE_FAIL || mExeState == EXE_ABNORMAL) {
+            // 获取错误码，后续再说
+        }
+    }
 }
 
 uint32_t Actuator::getMappedCmd(uint32_t ctrlCmd) {
@@ -22,6 +50,8 @@ uint32_t Actuator::getMappedCmd(uint32_t ctrlCmd) {
         return CMD_MAIN_ACTUATOR_RESUME;
     case CTRL_RESET:
         return CMD_MAIN_ACTUATOR_RESET;
+    case CTRL_PREPARE_STRIP:
+        return CMD_MAIN_ACTUATOR_PREPARE_STRIP;
     default:
         break;
     }
@@ -29,9 +59,13 @@ uint32_t Actuator::getMappedCmd(uint32_t ctrlCmd) {
 }
 
 bool Actuator::processCmd(uint32_t ctrlCmd) {
-    uint32_t cmd = getMappedCmd(ctrlCmd);
+    uint32_t mCmd = getMappedCmd(ctrlCmd);
 
-    switch (cmd) {
+    // 这里对当前的执行状态不做过滤了，即不管当前处于什么状态
+    // 都往下发命令，由机头去过滤，因此，记录的就是最新的命令
+
+    mExeState = EXE_WAIT;
+    switch (mCmd) {
     case CMD_MAIN_ACTUATOR_STOP:
         return stop();
     case CMD_MAIN_ACTUATOR_RECOVER:
@@ -40,11 +74,31 @@ bool Actuator::processCmd(uint32_t ctrlCmd) {
         return pause();
     case CMD_MAIN_ACTUATOR_RESUME:
         return resume();
+    case CMD_MAIN_ACTUATOR_PREPARE_STRIP:
+        return prepareStrip();
     default:
+        mExeState = EXE_FAIL;
         qDebug() << "Controller cmd " << ctrlCmd << " not support";
         break;
     }
     return false;
+}
+
+void Actuator::parseStripperQueryInfo(QJsonObject& e) {
+    qulonglong motorCurrent = e.value("motorCurrent").toVariant().toULongLong();
+    mRemoteState.motorStripCurrent = static_cast<int16_t>(motorCurrent & 0xffff);
+    mRemoteState.motorClampCurrent = static_cast<int16_t>((motorCurrent >> 32) & 0xffff);
+    mRemoteState.motorKnifeCurrent = static_cast<int16_t>((motorCurrent >> 16) & 0xffff);
+
+    uint32_t bat = static_cast<uint32_t>(e.value("bat").toInt());
+    mRemoteState.voltageStrip = static_cast<int32_t>((bat >> 8) & 0xffffff);
+}
+
+void Actuator::parseQueryInfo(QJsonObject& e) {
+    if (e.contains("stripper")) {
+        QJsonObject stripperExtra = e.value("stripper").toObject();
+        parseStripperQueryInfo(stripperExtra);
+    }
 }
 
 bool Actuator::reConnect() {
@@ -156,6 +210,16 @@ bool Actuator::resume() {
     mSeq++;
     ret = makeCmdAndSend(CMD_MAIN_ACTUATOR_RESUME, QD_MESSAGE_TYPE_JSON, e, b);
     qDebug() << "resume actuator executed";
+    return ret;
+}
+
+bool Actuator::prepareStrip() {
+    bool ret;
+    QJsonObject e;
+    QByteArray b;
+    mSeq++;
+    ret = makeCmdAndSend(CMD_MAIN_ACTUATOR_PREPARE_STRIP, QD_MESSAGE_TYPE_JSON, e, b);
+    qDebug() << "prepare strip executed";
     return ret;
 }
 

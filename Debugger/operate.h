@@ -35,15 +35,11 @@ private slots:
 
     void on_resume_clicked();
 
+    void on_prepareStrip_clicked();
+
 private:
     Ui::Operate *ui;
     Controller* mCtrl;
-    // QUdpSocket *mSocket;
-    // QTimer *mQueryTimer;
-    // QHostAddress mReceiverAddress;
-    // quint16 mReceiverPort;
-    // uint32_t mCmd;
-    // uint32_t mSeq;
 };
 
 #endif // OPERATE_H

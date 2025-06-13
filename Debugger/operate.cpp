@@ -9,16 +9,6 @@ Operate::Operate(QWidget *parent)
     , ui(new Ui::Operate)
 {
     ui->setupUi(this);
-    // mCmd = 0;
-    // mSeq = 1;
-    // mReceiverPort = 6666;
-    // mReceiverAddress.setAddress("10.168.1.171");
-    // mSocket = new QUdpSocket(this);
-    // mQueryTimer = new QTimer(this);
-    // connect(mQueryTimer, &QTimer::timeout, this, &Operate::doQuery);
-    // mQueryTimer->setSingleShot(false);
-    // mQueryTimer->start(15000);
-
     ui->stop->setStyleSheet(
         "QPushButton {"
         "   background-color: rgb(220, 0, 0);"
@@ -53,24 +43,11 @@ Operate::Operate(QWidget *parent)
 Operate::~Operate()
 {
     delete ui;
-    // if (mSocket) {
-    //     mSocket->close();
-    //     delete mSocket;
-    //     mSocket = nullptr;
-    // }
 }
 
 void Operate::setController(Controller* ctrl) {
     mCtrl = ctrl;
 }
-
-// void Operate::doQuery() {
-//     QJsonObject e;
-//     QByteArray b;
-//     makeCmdAndSend(CMD_MAIN_ACTUATOR_QUERY, QD_MESSAGE_TYPE_JSON, e, b);
-//     // qDebug() << "query executed";
-//     mQueryTimer->setInterval(500);
-// }
 
 void Operate::on_reset_clicked()
 {
@@ -117,5 +94,11 @@ void Operate::on_resume_clicked()
 {
     qDebug() << "resume clicked";
     mCtrl->dealCmd(CTRL_RESUME);
+}
+
+void Operate::on_prepareStrip_clicked()
+{
+    qDebug() << "prepare strip clicked";
+    mCtrl->dealCmd(CTRL_PREPARE_STRIP, End_actuator);
 }
 
