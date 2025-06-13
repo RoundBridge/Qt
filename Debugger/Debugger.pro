@@ -16,7 +16,8 @@ SOURCES += \
     link.cpp \
     main.cpp \
     mainwindow.cpp \
-    operate.cpp
+    operate.cpp \
+    state.cpp
 
 HEADERS += \
     actuator.h \
@@ -26,11 +27,13 @@ HEADERS += \
     end.h \
     link.h \
     mainwindow.h \
-    operate.h
+    operate.h \
+    state.h
 
 FORMS += \
     mainwindow.ui \
-    operate.ui
+    operate.ui \
+    state.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

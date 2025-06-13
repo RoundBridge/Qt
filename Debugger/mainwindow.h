@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "operate.h"
+#include "state.h"
 #include "controller.h"
 
 
@@ -19,10 +20,13 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    State* getStateInstance() const {return st;}
+    Operate* getOperateInstance() const {return op;}
 
 private:
     Ui::MainWindow *ui;
     Operate *op;
+    State *st;
     Controller *ctrl;
 };
 #endif // MAINWINDOW_H

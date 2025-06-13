@@ -19,8 +19,6 @@ public:
     void setController(Controller* ctrl);
 
 private slots:
-    // void doQuery();
-
     void on_reset_clicked();
 
     void on_contentIP_editingFinished();
@@ -37,7 +35,10 @@ private slots:
 
     void on_prepareStrip_clicked();
 
+    void on_ActuatorState_clicked();
+
 private:
+    QWidget *mParent;
     Ui::Operate *ui;
     Controller* mCtrl;
 };

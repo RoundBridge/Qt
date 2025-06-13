@@ -1,6 +1,6 @@
 #include <QDebug>
 #include <QIODevice>
-#include "operate.h"
+#include "mainwindow.h"
 #include "ui_operate.h"
 
 
@@ -8,6 +8,7 @@ Operate::Operate(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Operate)
 {
+    mParent = parent;
     ui->setupUi(this);
     ui->stop->setStyleSheet(
         "QPushButton {"
@@ -100,5 +101,12 @@ void Operate::on_prepareStrip_clicked()
 {
     qDebug() << "prepare strip clicked";
     mCtrl->dealCmd(CTRL_PREPARE_STRIP, End_actuator);
+}
+
+void Operate::on_ActuatorState_clicked()
+{
+    MainWindow* p = dynamic_cast<MainWindow*>(mParent);
+    hide();
+    p->getStateInstance()->show();
 }
 
