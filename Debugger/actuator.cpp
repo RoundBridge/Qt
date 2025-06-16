@@ -247,6 +247,9 @@ bool Actuator::strip() {
     QJsonObject e;
     QByteArray b;
     mSeq++;
+    if (mContinueStrip) {
+        e.insert("skip", mContinueStrip);
+    }
     ret = makeCmdAndSend(CMD_MAIN_ACTUATOR_DO_STRIP, QD_MESSAGE_TYPE_JSON, e, b);
     qDebug() << "strip executed";
     return ret;
@@ -256,10 +259,6 @@ bool Actuator::query() {
     bool ret;
     QJsonObject e;
     QByteArray b;
-
-    if (mContinueStrip) {
-        e.insert("skip", mContinueStrip);
-    }
     ret = makeCmdAndSend(CMD_MAIN_ACTUATOR_QUERY, QD_MESSAGE_TYPE_JSON, e, b);
     return ret;
 }
