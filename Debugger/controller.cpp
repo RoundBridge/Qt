@@ -1,12 +1,14 @@
 #include <QDebug>
 #include "crc.h"
 #include "controller.h"
+#include "mainwindow.h"
 
 Controller::Controller(QObject *parent)
     : QObject{parent}
 {
     mCtrlCmd = 0;
     mIsStop = mIsPause = false;
+    mWin = dynamic_cast<MainWindow*>(parent);
     memset(mEndSet, 0, sizeof(mEndSet));
     memset(mLinkSet, 0, sizeof(mLinkSet));
 
@@ -129,10 +131,9 @@ void Controller::analyseData(QByteArray &data) {
         return;
     }
 
-    QJsonParseError error;
-    QJsonDocument jsonDoc = QJsonDocument::fromJson(msg_body, &error);
-
     if (hdr->type == QD_MESSAGE_TYPE_JSON) {
+        QJsonParseError error;
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(msg_body, &error);
         if (error.error == QJsonParseError::NoError) {
             if (jsonDoc.isObject()) {
                 QJsonObject jsonObj = jsonDoc.object();
@@ -142,6 +143,8 @@ void Controller::analyseData(QByteArray &data) {
             qDebug() << "Json parse error";
             return;
         }
+    } else if (hdr->type == QD_MESSAGE_TYPE_LOG) {
+        mWin->getStateInstance()->displayLog(QString(msg_body));
     } else {
         qDebug() << "Recv data type " << hdr->type << " not support";
     }
@@ -182,11 +185,10 @@ void Controller::analyseJsonPacket(QJsonObject &data) {
     seq = data.value("seq").toInt();
     status = data.value("result").toInt();
 
-    mEndSet[end]->updateEndExeState(cmd, seq, status);
-
     if (msgType == "request") {
         // 处理来自外部的请求
     } else {
+        mEndSet[end]->updateEndExeState(cmd, seq, status);
         if (data.contains("extra")) {
             extra = data.value("extra").toObject();
             mEndSet[end]->parseExtraInfo(cmd, extra);

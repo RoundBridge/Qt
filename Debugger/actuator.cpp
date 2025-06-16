@@ -6,6 +6,7 @@
 Actuator::Actuator(Controller* c, const char* remoteIp, quint16 remotePort, Link* link, int id):End(c, id) {
     mCtrl = c;
     mCmd = 0, mSeq = 1;
+    mContinueStrip = false;
     mRemotePort = remotePort;
     mRemoteIp.setAddress(remoteIp);
     mLink = link;
@@ -13,8 +14,22 @@ Actuator::Actuator(Controller* c, const char* remoteIp, quint16 remotePort, Link
 }
 
 bool Actuator::setParam(uint32_t key, void* data, uint32_t dataLen) {
-    (void)key; (void)data; (void)dataLen;
-    return false;
+    bool ret = false;
+
+    if (!data || dataLen == 0)
+        return false;
+
+    switch (key) {
+    case CONTINUE_STRIP:
+        if (dataLen >= sizeof(bool)) {
+            mContinueStrip = *((bool*)data);
+            ret = true;
+        }
+        break;
+    default:
+        break;
+    }
+    return ret;
 }
 
 bool Actuator::getParam(uint32_t key, void* data, uint32_t dataLen) {
@@ -52,6 +67,8 @@ uint32_t Actuator::getMappedCmd(uint32_t ctrlCmd) {
         return CMD_MAIN_ACTUATOR_RESET;
     case CTRL_PREPARE_STRIP:
         return CMD_MAIN_ACTUATOR_PREPARE_STRIP;
+    case CTRL_STRIP:
+        return CMD_MAIN_ACTUATOR_DO_STRIP;
     default:
         break;
     }
@@ -76,6 +93,8 @@ bool Actuator::processCmd(uint32_t ctrlCmd) {
         return resume();
     case CMD_MAIN_ACTUATOR_PREPARE_STRIP:
         return prepareStrip();
+    case CMD_MAIN_ACTUATOR_DO_STRIP:
+        return strip();
     default:
         mExeState = EXE_FAIL;
         qDebug() << "Controller cmd " << ctrlCmd << " not support";
@@ -223,10 +242,24 @@ bool Actuator::prepareStrip() {
     return ret;
 }
 
+bool Actuator::strip() {
+    bool ret;
+    QJsonObject e;
+    QByteArray b;
+    mSeq++;
+    ret = makeCmdAndSend(CMD_MAIN_ACTUATOR_DO_STRIP, QD_MESSAGE_TYPE_JSON, e, b);
+    qDebug() << "strip executed";
+    return ret;
+}
+
 bool Actuator::query() {
     bool ret;
     QJsonObject e;
     QByteArray b;
+
+    if (mContinueStrip) {
+        e.insert("skip", mContinueStrip);
+    }
     ret = makeCmdAndSend(CMD_MAIN_ACTUATOR_QUERY, QD_MESSAGE_TYPE_JSON, e, b);
     return ret;
 }

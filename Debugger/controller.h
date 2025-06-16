@@ -3,9 +3,11 @@
 
 #include <thread>
 #include <QObject>
-#include <common.h>
+#include "common.h"
 #include "end.h"
 
+
+class MainWindow;
 
 typedef enum {
     CTRL_STOP           = 1,
@@ -14,6 +16,7 @@ typedef enum {
     CTRL_RESUME         = 4,
     CTRL_RESET          = 5,
     CTRL_PREPARE_STRIP  = 6,
+    CTRL_STRIP          = 7,
 } ControllerCmd;
 
 
@@ -43,6 +46,7 @@ private:
     std::thread* mPoller;
     End *mEndSet[End_num];
     Link *mLinkSet[Link_num];
+    MainWindow* mWin;
 };
 
 #endif // CONTROLLER_H

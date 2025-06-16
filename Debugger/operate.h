@@ -37,6 +37,10 @@ private slots:
 
     void on_ActuatorState_clicked();
 
+    void on_strip_clicked();
+
+    void on_continueStrip_clicked(bool checked);
+
 private:
     QWidget *mParent;
     Ui::Operate *ui;

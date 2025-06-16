@@ -59,6 +59,24 @@
     <string>清空</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="logGet">
+   <property name="geometry">
+    <rect>
+     <x>830</x>
+     <y>600</y>
+     <width>96</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>获取</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>

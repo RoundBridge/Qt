@@ -26,6 +26,7 @@ typedef struct {
 typedef enum {
     QD_MESSAGE_TYPE_JSON = 1,           //json类型
     QD_MESSAGE_TYPE_BINARY = 2,         //二进制类型，用于升级
+    QD_MESSAGE_TYPE_LOG = 256,          //日志信息
 } QDMessageType;
 
 typedef enum {
@@ -46,8 +47,9 @@ typedef struct {
 } ActuatorState;
 
 typedef enum {
-    ACTUATOR_STATE = 1,
-    BYPASS_GRIPPER_STATE = 2,
+    ACTUATOR_STATE = 1,         //获取机头状态，ActuatorState类型
+    BYPASS_GRIPPER_STATE = 2,   //获取引流线抓线器状态
+    CONTINUE_STRIP = 3,         //获取/设置是否全速剥皮，bool类型
 } ParamKeyOpt;
 
 #endif // COMMON_H

@@ -122,10 +122,12 @@ private:
     bool pause();
     bool resume();
     bool prepareStrip();
+    bool strip();
     bool makeCmdAndSend(uint32_t c, int32_t msgType, QJsonObject& extra, QByteArray& byte);
 
 private:
     uint32_t mCmd, mSeq;
+    bool mContinueStrip;
     quint16 mRemotePort;
     ActuatorState mRemoteState;
     QHostAddress mRemoteIp;

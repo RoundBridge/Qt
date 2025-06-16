@@ -22,6 +22,8 @@ private slots:
 
     void on_logClear_clicked();
 
+    void on_logGet_clicked();
+
 private:
     QWidget *mParent;
     Ui::State *ui;

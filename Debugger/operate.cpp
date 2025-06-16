@@ -1,5 +1,6 @@
 #include <QDebug>
 #include <QIODevice>
+#include "operate.h"
 #include "mainwindow.h"
 #include "ui_operate.h"
 
@@ -108,5 +109,17 @@ void Operate::on_ActuatorState_clicked()
     MainWindow* p = dynamic_cast<MainWindow*>(mParent);
     hide();
     p->getStateInstance()->show();
+}
+
+void Operate::on_strip_clicked()
+{
+    qDebug() << "strip clicked";
+    mCtrl->dealCmd(CTRL_STRIP, End_actuator);
+}
+
+void Operate::on_continueStrip_clicked(bool checked)
+{
+    qDebug() << "continue strip " << checked;
+    mCtrl->setParam(End_actuator, CONTINUE_STRIP, &checked, sizeof(checked));
 }
 

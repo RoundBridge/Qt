@@ -1,5 +1,6 @@
 #include "state.h"
 #include "ui_state.h"
+#include "state.h"
 #include "mainwindow.h"
 
 State::State(QWidget *parent)
@@ -30,5 +31,10 @@ void State::on_logClear_clicked()
 {
     // ui->log->appendPlainText("测试日志");
     ui->log->clear();
+}
+
+void State::on_logGet_clicked()
+{
+    // todo...
 }
 
