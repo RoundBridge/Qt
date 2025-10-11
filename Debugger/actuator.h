@@ -112,25 +112,16 @@ public:
     virtual uint32_t getMappedCmd(uint32_t ctrlCmd);
     virtual bool processCmd(uint32_t ctrlCmd);
     virtual bool reConnect();
-    virtual bool query();
 
 private:
     void parseStripperQueryInfo(QJsonObject& e);
     void parseQueryInfo(QJsonObject& e);
-    bool stop();
-    bool recover();
-    bool pause();
-    bool resume();
     bool prepareStrip();
     bool strip();
 
 private:
-    uint32_t mCmd, mSeq;
     bool mContinueStrip;
-    quint16 mRemotePort;
     ActuatorState mRemoteState;
-    QHostAddress mRemoteIp;
-    Link* mLink; //考虑到以后万一一个末端可以有多个连接，甚至连接的类型还可能不一样，因此不放到基类里面
 };
 
 #endif // ACTUATOR_H

@@ -1,12 +1,8 @@
 #include "controller.h"
 #include "joint.h"
 
-joint::joint(Controller* c, const char* remoteIp, quint16 remotePort, Link* link, int id):End(c, id) {
-    mCtrl = c;
-    mCmd = 0, mSeq = 1;
-    mRemotePort = remotePort;
-    mRemoteIp.setAddress(remoteIp);
-    mLink = link;
+joint::joint(Controller* c, const char* remoteIp, quint16 remotePort, Link* link, int id):End(c, remoteIp, remotePort, link, id) {
+
 }
 
 bool joint::setParam(uint32_t key, void* data, uint32_t dataLen) {
@@ -52,7 +48,8 @@ uint32_t joint::getMappedCmd(uint32_t ctrlCmd) {
     default:
         break;
     }
-    return 0;
+    qDebug() << "joint not support ctrl cmd " << ctrlCmd;
+    return MAX_UINT32;
 }
 
 bool joint::processCmd(uint32_t ctrlCmd) {
@@ -86,63 +83,6 @@ bool joint::processCmd(uint32_t ctrlCmd) {
         qDebug() << "Controller cmd " << ctrlCmd << " not support";
         break;
     }
-    return false;
-}
-
-
-bool joint::stop() {
-    bool ret = false;
-    uint32_t len = 0;
-    QByteArray out;
-
-    len = makeCmd(CMD_JOINT_STOP, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
-    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
-        qDebug() << "stop joint executed";
-        ret = true;
-    }
-    return ret;
-}
-
-bool joint::recover() {
-    bool ret = false;
-    uint32_t len = 0;
-    QByteArray out;
-
-    len = makeCmd(CMD_JOINT_RECOVER, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
-    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
-        qDebug() << "recover joint executed";
-        ret = true;
-    }
-    return ret;
-}
-
-bool joint::pause() {
-    bool ret = false;
-    uint32_t len = 0;
-    QByteArray out;
-
-    len = makeCmd(CMD_JOINT_PAUSE, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
-    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
-        qDebug() << "pause joint executed";
-        ret = true;
-    }
-    return ret;
-}
-
-bool joint::resume() {
-    bool ret = false;
-    uint32_t len = 0;
-    QByteArray out;
-
-    len = makeCmd(CMD_JOINT_RESUME, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
-    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
-        qDebug() << "resume joint executed";
-        ret = true;
-    }
-    return ret;
-}
-
-bool joint::reset() {
     return false;
 }
 

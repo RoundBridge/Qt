@@ -17,9 +17,15 @@ void End::destroyEnd(End* e) {
     delete e;
 }
 
-End::End(Controller* c, int id) {
+End::End(Controller* c, const char* remoteIp, quint16 remotePort, Link* link, int id) {
     mEndId = id;
     mCtrl = c;
+    mLink = link;
+
+    mCmd = 0, mSeq = 1;
+    mRemotePort = remotePort;
+    mRemoteIp.setAddress(remoteIp);
+
     mConnectState = Link_Unknown;
     mHeartBeatMs = 0;
     mExeState = EXE_SUCCESS;
@@ -68,6 +74,10 @@ uint32_t End::makeCmd(uint32_t c, uint32_t s, int32_t msgType, QByteArray& out, 
         to = JOINT_NAME;
     } else {
         qDebug() << "end id " << mEndId << " not support";
+        return 0;
+    }
+
+    if (c == MAX_UINT32) {
         return 0;
     }
 
@@ -140,6 +150,79 @@ bool End::reConnect() {
     return false;
 }
 
+bool End::stop() {
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+
+    len = makeCmd(getMappedCmd(CTRL_STOP), ++mSeq, QD_MESSAGE_TYPE_JSON, out);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "stop end " << mEndId << " executed";
+        ret = true;
+    }
+    return ret;
+}
+
+bool End::recover() {
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+
+    len = makeCmd(getMappedCmd(CTRL_RECOVER), ++mSeq, QD_MESSAGE_TYPE_JSON, out);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "recover end " << mEndId << " executed";
+        ret = true;
+    }
+    return ret;
+}
+
+bool End::pause() {
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+
+    len = makeCmd(getMappedCmd(CTRL_PAUSE), ++mSeq, QD_MESSAGE_TYPE_JSON, out);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "pause end " << mEndId << " executed";
+        ret = true;
+    }
+    return ret;
+}
+
+bool End::resume() {
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+
+    len = makeCmd(getMappedCmd(CTRL_RESUME), ++mSeq, QD_MESSAGE_TYPE_JSON, out);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "resume end " << mEndId << " executed";
+        ret = true;
+    }
+    return ret;
+}
+
+bool End::reset() {
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+
+    len = makeCmd(getMappedCmd(CTRL_RESET), ++mSeq, QD_MESSAGE_TYPE_JSON, out);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "reset end " << mEndId << " executed";
+        ret = true;
+    }
+    return ret;
+}
+
 bool End::query() {
-    return false;
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+
+    len = makeCmd(getMappedCmd(CTRL_QUERY), mSeq, QD_MESSAGE_TYPE_JSON, out);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        ret = true;
+    }
+    return ret;
 }

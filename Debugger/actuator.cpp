@@ -2,13 +2,8 @@
 #include "controller.h"
 #include "actuator.h"
 
-Actuator::Actuator(Controller* c, const char* remoteIp, quint16 remotePort, Link* link, int id):End(c, id) {
-    mCtrl = c;
-    mCmd = 0, mSeq = 1;
+Actuator::Actuator(Controller* c, const char* remoteIp, quint16 remotePort, Link* link, int id):End(c, remoteIp, remotePort, link, id) {
     mContinueStrip = false;
-    mRemotePort = remotePort;
-    mRemoteIp.setAddress(remoteIp);
-    mLink = link;
     memset(&mRemoteState, 0, sizeof(mRemoteState));
 }
 
@@ -71,7 +66,8 @@ uint32_t Actuator::getMappedCmd(uint32_t ctrlCmd) {
     default:
         break;
     }
-    return 0;
+    qDebug() << "actuator not support ctrl cmd " << ctrlCmd;
+    return MAX_UINT32;
 }
 
 bool Actuator::processCmd(uint32_t ctrlCmd) {
@@ -135,58 +131,6 @@ bool Actuator::reConnect() {
     return ret;
 }
 
-bool Actuator::stop() {
-    bool ret = false;
-    uint32_t len = 0;
-    QByteArray out;
-
-    len = makeCmd(CMD_MAIN_ACTUATOR_STOP, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
-    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
-        qDebug() << "stop actuator executed";
-        ret = true;
-    }
-    return ret;
-}
-
-bool Actuator::recover() {
-    bool ret = false;
-    uint32_t len = 0;
-    QByteArray out;
-
-    len = makeCmd(CMD_MAIN_ACTUATOR_RECOVER, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
-    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
-        qDebug() << "recover actuator executed";
-        ret = true;
-    }
-    return ret;
-}
-
-bool Actuator::pause() {
-    bool ret = false;
-    uint32_t len = 0;
-    QByteArray out;
-
-    len = makeCmd(CMD_MAIN_ACTUATOR_PAUSE, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
-    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
-        qDebug() << "pause actuator executed";
-        ret = true;
-    }
-    return ret;
-}
-
-bool Actuator::resume() {
-    bool ret = false;
-    uint32_t len = 0;
-    QByteArray out;
-
-    len = makeCmd(CMD_MAIN_ACTUATOR_RESUME, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
-    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
-        qDebug() << "resume actuator executed";
-        ret = true;
-    }
-    return ret;
-}
-
 bool Actuator::prepareStrip() {
     bool ret = false;
     uint32_t len = 0;
@@ -213,18 +157,6 @@ bool Actuator::strip() {
     len = makeCmd(CMD_MAIN_ACTUATOR_DO_STRIP, ++mSeq, QD_MESSAGE_TYPE_JSON, out, &e);
     if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
         qDebug() << "strip executed";
-        ret = true;
-    }
-    return ret;
-}
-
-bool Actuator::query() {
-    bool ret = false;
-    uint32_t len = 0;
-    QByteArray out;
-
-    len = makeCmd(CMD_MAIN_ACTUATOR_QUERY, mSeq, QD_MESSAGE_TYPE_JSON, out);
-    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
         ret = true;
     }
     return ret;

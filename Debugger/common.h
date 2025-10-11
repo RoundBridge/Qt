@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define MAX_UINT32          0xffffffff
+
 #define CENTER_NAME         "center"
 #define CENTER_PORT         6666
 

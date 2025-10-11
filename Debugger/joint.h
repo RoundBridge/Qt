@@ -81,11 +81,6 @@ public:
     virtual bool getParam(uint32_t key, void* data, uint32_t dataLen);
 
 private:
-    bool stop();
-    bool recover();
-    bool pause();
-    bool resume();
-    bool reset();
     bool rotate();
     bool pitch();
     bool stop_rotate();
@@ -95,7 +90,6 @@ private:
     uint32_t mCmd, mSeq;
     quint16 mRemotePort;
     QHostAddress mRemoteIp;
-    Link* mLink;
 };
 
 #endif // JOINT_H

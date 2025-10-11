@@ -7,8 +7,8 @@ class Controller; //前置声明
 
 class End
 {
-public:    
-    End(Controller* controller, int id = -1);
+public:
+    End(Controller* controller, const char* remoteIp, quint16 remotePort, Link* link, int id = -1);
     virtual ~End();
 
     static End* createEnd(Controller* controller, Link* link, int id = -1);
@@ -28,13 +28,24 @@ public:
     virtual bool processCmd(uint32_t ctrlCmd);
     virtual bool reConnect();
     virtual bool query();
+    virtual bool stop();
+    virtual bool recover();
+    virtual bool pause();
+    virtual bool resume();
+    virtual bool reset();
 
     int mEndId;
     int mConnectState;
+
+    uint32_t mCmd, mSeq;
+    quint16 mRemotePort;
+    QHostAddress mRemoteIp;
+
     uint32_t mExeState;     //命令执行状态
     qint64 mHeartBeatMs;
     qint64 mLastReconnectMs;
     Controller* mCtrl;
+    Link* mLink; //信令连接，公用连接，如果以后一个末端可以有多个连接，甚至连接的类型还可能不一样，那么差异化的连接放到子类里
 };
 
 #endif // END_H

@@ -10,6 +10,7 @@
 class MainWindow;
 
 typedef enum {
+    CTRL_QUERY          = 0,
     CTRL_STOP           = 1,
     CTRL_RECOVER        = 2,
     CTRL_PAUSE          = 3,
