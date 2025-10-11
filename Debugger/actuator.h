@@ -123,7 +123,6 @@ private:
     bool resume();
     bool prepareStrip();
     bool strip();
-    bool makeCmdAndSend(uint32_t c, int32_t msgType, QJsonObject& extra, QByteArray& byte);
 
 private:
     uint32_t mCmd, mSeq;
@@ -131,7 +130,7 @@ private:
     quint16 mRemotePort;
     ActuatorState mRemoteState;
     QHostAddress mRemoteIp;
-    Link* mLink;
+    Link* mLink; //考虑到以后万一一个末端可以有多个连接，甚至连接的类型还可能不一样，因此不放到基类里面
 };
 
 #endif // ACTUATOR_H

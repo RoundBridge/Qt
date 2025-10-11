@@ -19,6 +19,7 @@ public:
     bool isConnect() const {return mConnectState == Link_Connect;}
     void updateEndConnectState(bool valid, qint64 ms);
 
+    virtual uint32_t makeCmd(uint32_t c, uint32_t s, int32_t msgType, QByteArray& out, QJsonObject* extra=nullptr, QByteArray* byte=nullptr);
     virtual void updateEndExeState(uint32_t endCmd, uint32_t seq, uint32_t state);
     virtual void parseExtraInfo(uint32_t endCmd, QJsonObject &e);
     virtual bool setParam(uint32_t key, void* data, uint32_t dataLen);

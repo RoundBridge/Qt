@@ -17,6 +17,12 @@ typedef enum {
     CTRL_RESET          = 5,
     CTRL_PREPARE_STRIP  = 6,
     CTRL_STRIP          = 7,
+    CTRL_JOINT_ROTATE       = 21,
+    CTRL_JOINT_ROTATE_STOP  = 22,
+    CTRL_JOINT_PITCH        = 23,
+    CTRL_JOINT_PITCH_STOP   = 24,
+    CTRL_JOINT_YAW          = 25,
+    CTRL_JOINT_YAW_STOP     = 26,
 } ControllerCmd;
 
 

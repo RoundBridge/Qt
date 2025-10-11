@@ -1,5 +1,4 @@
 #include <string.h>
-#include "crc.h"
 #include "controller.h"
 #include "actuator.h"
 
@@ -136,129 +135,97 @@ bool Actuator::reConnect() {
     return ret;
 }
 
-bool Actuator::makeCmdAndSend(uint32_t c, int32_t msgType, QJsonObject& extra, QByteArray& byte) {
-    uint32_t bodyL = 0, hdrL = 0;
-    QDMessageHdr hdr;
-    QJsonObject root;
-    QJsonDocument doc;
-    QByteArray array;
-    QByteArray crc_data;
-    QByteArray send_data_head1;
-    QByteArray send_data_head2;
-    QByteArray send_data;
-
-    if (!mLink) {
-        qDebug() << "Actuator link not init!";
-        return false;
-    }
-
-    hdrL = sizeof(QDMessageHdr);
-
-    if (msgType == QD_MESSAGE_TYPE_JSON) {
-        root.insert("from", CENTER_NAME);
-        root.insert("to", MAIN_ACTUATOR_NAME);
-        root.insert("type", "request");
-        root.insert("cmd", QJsonValue::fromVariant(QVariant(c)));
-        root.insert("result", 1);
-        root["seq"] = QJsonValue::fromVariant(QVariant(mSeq));
-        root.insert("extra", extra);
-        doc.setObject(root);
-        array = doc.toJson(QJsonDocument::Compact);
-    } else {
-        array = byte;
-    }
-    bodyL = array.size();
-
-    hdr.magic = 0x4E5A4451;
-    hdr.magic = qToBigEndian(hdr.magic);
-    hdr.len = bodyL + hdrL;
-    hdr.len = qToBigEndian(hdr.len);
-    hdr.type = msgType;
-    hdr.type = qToBigEndian(hdr.type);
-
-    QDataStream out1(&send_data_head1, QIODevice::WriteOnly);
-    QDataStream out2(&send_data_head2, QIODevice::WriteOnly);
-
-    out1 << hdr.len << hdr.type;
-    crc_data = send_data_head1 + array;
-    hdr.crc32 = getCRC32((unsigned char *)(crc_data.data()), bodyL + 8);
-    hdr.crc32 = qToBigEndian(hdr.crc32);
-    out2 << hdr.magic << hdr.crc32;
-    send_data = send_data_head2 + crc_data;
-
-    if (c != CMD_MAIN_ACTUATOR_QUERY && msgType == QD_MESSAGE_TYPE_JSON)
-        qDebug() << "msg len " << bodyL + hdrL << ", type " << msgType << ", content:" << array;
-
-    return mLink->send((uint8_t*)send_data.data(), (uint32_t)send_data.size(), mRemoteIp, mRemotePort);
-}
-
 bool Actuator::stop() {
-    bool ret;
-    QJsonObject e;
-    QByteArray b;
-    mSeq++;
-    ret = makeCmdAndSend(CMD_MAIN_ACTUATOR_STOP, QD_MESSAGE_TYPE_JSON, e, b);
-    qDebug() << "stop actuator executed";
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+
+    len = makeCmd(CMD_MAIN_ACTUATOR_STOP, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "stop actuator executed";
+        ret = true;
+    }
     return ret;
 }
 
 bool Actuator::recover() {
-    bool ret;
-    QJsonObject e;
-    QByteArray b;
-    mSeq++;
-    ret = makeCmdAndSend(CMD_MAIN_ACTUATOR_RECOVER, QD_MESSAGE_TYPE_JSON, e, b);
-    qDebug() << "recover actuator executed";
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+
+    len = makeCmd(CMD_MAIN_ACTUATOR_RECOVER, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "recover actuator executed";
+        ret = true;
+    }
     return ret;
 }
 
 bool Actuator::pause() {
-    bool ret;
-    QJsonObject e;
-    QByteArray b;
-    mSeq++;
-    ret = makeCmdAndSend(CMD_MAIN_ACTUATOR_PAUSE, QD_MESSAGE_TYPE_JSON, e, b);
-    qDebug() << "pause actuator executed";
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+
+    len = makeCmd(CMD_MAIN_ACTUATOR_PAUSE, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "pause actuator executed";
+        ret = true;
+    }
     return ret;
 }
 
 bool Actuator::resume() {
-    bool ret;
-    QJsonObject e;
-    QByteArray b;
-    mSeq++;
-    ret = makeCmdAndSend(CMD_MAIN_ACTUATOR_RESUME, QD_MESSAGE_TYPE_JSON, e, b);
-    qDebug() << "resume actuator executed";
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+
+    len = makeCmd(CMD_MAIN_ACTUATOR_RESUME, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "resume actuator executed";
+        ret = true;
+    }
     return ret;
 }
 
 bool Actuator::prepareStrip() {
-    bool ret;
-    QJsonObject e;
-    QByteArray b;
-    mSeq++;
-    ret = makeCmdAndSend(CMD_MAIN_ACTUATOR_PREPARE_STRIP, QD_MESSAGE_TYPE_JSON, e, b);
-    qDebug() << "prepare strip executed";
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+
+    len = makeCmd(CMD_MAIN_ACTUATOR_PREPARE_STRIP, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "prepare strip executed";
+        ret = true;
+    }
     return ret;
 }
 
 bool Actuator::strip() {
-    bool ret;
+    bool ret = false;
+    uint32_t len = 0;
     QJsonObject e;
-    QByteArray b;
-    mSeq++;
+    QByteArray out;
+
     if (mContinueStrip) {
         e.insert("skip", mContinueStrip);
     }
-    ret = makeCmdAndSend(CMD_MAIN_ACTUATOR_DO_STRIP, QD_MESSAGE_TYPE_JSON, e, b);
-    qDebug() << "strip executed";
+
+    len = makeCmd(CMD_MAIN_ACTUATOR_DO_STRIP, ++mSeq, QD_MESSAGE_TYPE_JSON, out, &e);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "strip executed";
+        ret = true;
+    }
     return ret;
 }
 
 bool Actuator::query() {
-    bool ret;
-    QJsonObject e;
-    QByteArray b;
-    ret = makeCmdAndSend(CMD_MAIN_ACTUATOR_QUERY, QD_MESSAGE_TYPE_JSON, e, b);
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+
+    len = makeCmd(CMD_MAIN_ACTUATOR_QUERY, mSeq, QD_MESSAGE_TYPE_JSON, out);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        ret = true;
+    }
     return ret;
 }

@@ -13,6 +13,7 @@ SOURCES += \
     controller.cpp \
     crc.c \
     end.cpp \
+    joint.cpp \
     link.cpp \
     main.cpp \
     mainwindow.cpp \
@@ -25,6 +26,7 @@ HEADERS += \
     controller.h \
     crc.h \
     end.h \
+    joint.h \
     link.h \
     mainwindow.h \
     operate.h \

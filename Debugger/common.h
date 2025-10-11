@@ -10,9 +10,14 @@
 #define MAIN_ACTUATOR_IP    "10.168.1.171"
 #define MAIN_ACTUATOR_PORT  6666
 
+#define JOINT_NAME          "joint"
+#define JOINT_IP            "10.168.1.174"
+#define JOINT_PORT          6666
+
 typedef enum {
     End_actuator = 0,
     End_bypass_gripper,
+    End_joint,
     End_num
 } EndSet;
 
@@ -50,6 +55,9 @@ typedef enum {
     ACTUATOR_STATE = 1,         //获取机头状态，ActuatorState类型
     BYPASS_GRIPPER_STATE = 2,   //获取引流线抓线器状态
     CONTINUE_STRIP = 3,         //获取/设置是否全速剥皮，bool类型
+    JOINT_ROTATE_PARAMS = 4,    //获取/设置旋转关节旋转电机参数
+    JOINT_PITCH_PARAMS = 5,     //获取/设置旋转关节俯仰电机参数
+    JOINT_YAW_PARAMS = 6,       //获取/设置旋转关节偏航电机参数
 } ParamKeyOpt;
 
 #endif // COMMON_H

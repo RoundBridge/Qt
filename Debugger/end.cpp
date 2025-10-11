@@ -1,5 +1,6 @@
 #include <thread>
 #include "common.h"
+#include "crc.h"
 #include "controller.h"
 #include "actuator.h"
 
@@ -48,6 +49,63 @@ bool End::execute(uint32_t ctrlCmd) {
         return false;
     }
     return processCmd(ctrlCmd);
+}
+
+uint32_t End::makeCmd(uint32_t c, uint32_t s, int32_t msgType, QByteArray& out, QJsonObject* extra, QByteArray* byte) {
+    uint32_t bodyL = 0, hdrL = 0;
+    const char* to;
+    QDMessageHdr hdr;
+    QJsonObject root;
+    QJsonDocument doc;
+    QByteArray array;
+    QByteArray crc_data;
+    QByteArray send_data_head1;
+    QByteArray send_data_head2;
+
+    if (mEndId == End_actuator) {
+        to = MAIN_ACTUATOR_NAME;
+    } else if (mEndId == End_joint) {
+        to = JOINT_NAME;
+    } else {
+        qDebug() << "end id " << mEndId << " not support";
+        return 0;
+    }
+
+    hdrL = sizeof(QDMessageHdr);
+
+    if (msgType == QD_MESSAGE_TYPE_JSON) {
+        root.insert("from", CENTER_NAME);
+        root.insert("to", to);
+        root.insert("type", "request");
+        root.insert("cmd", QJsonValue::fromVariant(QVariant(c)));
+        root.insert("result", 1);
+        root["seq"] = QJsonValue::fromVariant(QVariant(s));
+        if(extra) root.insert("extra", *extra);
+        doc.setObject(root);
+        array = doc.toJson(QJsonDocument::Compact);
+    } else {
+        if(byte) array = *byte;
+    }
+    bodyL = array.size();
+
+    hdr.magic = 0x4E5A4451;
+    hdr.magic = qToBigEndian(hdr.magic);
+    hdr.len = bodyL + hdrL;
+    hdr.len = qToBigEndian(hdr.len);
+    hdr.type = msgType;
+    hdr.type = qToBigEndian(hdr.type);
+
+    QDataStream out1(&send_data_head1, QIODevice::WriteOnly);
+    QDataStream out2(&send_data_head2, QIODevice::WriteOnly);
+
+    out1 << hdr.len << hdr.type;
+    crc_data = send_data_head1 + array;
+    hdr.crc32 = getCRC32((unsigned char *)(crc_data.data()), bodyL + 8);
+    hdr.crc32 = qToBigEndian(hdr.crc32);
+    out2 << hdr.magic << hdr.crc32;
+    out = send_data_head2 + crc_data;
+
+    return out.size();
 }
 
 void End::updateEndExeState(uint32_t endCmd, uint32_t seq, uint32_t state) {

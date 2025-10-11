@@ -17,6 +17,7 @@ Controller::Controller(QObject *parent)
     }
 
     mEndSet[End_actuator] = End::createEnd(this, mLinkSet[Link_UDP], End_actuator);
+    mEndSet[End_joint] = End::createEnd(this, mLinkSet[Link_UDP], End_joint);
 
     mElapsedTimer.start();
 
