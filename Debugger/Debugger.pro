@@ -18,6 +18,7 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     operate.cpp \
+    operate_joint.cpp \
     state.cpp
 
 HEADERS += \
@@ -30,11 +31,13 @@ HEADERS += \
     link.h \
     mainwindow.h \
     operate.h \
+    operate_joint.h \
     state.h
 
 FORMS += \
     mainwindow.ui \
     operate.ui \
+    operate_joint.ui \
     state.ui
 
 # Default rules for deployment.

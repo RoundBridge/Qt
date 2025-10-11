@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "operate.h"
+#include "operate_joint.h"
 #include "state.h"
 #include "controller.h"
 
@@ -22,10 +23,12 @@ public:
     ~MainWindow();
     State* getStateInstance() const {return st;}
     Operate* getOperateInstance() const {return op;}
+    operate_joint* getJointOperateInstance() const {return op_joint;}
 
 private:
     Ui::MainWindow *ui;
     Operate *op;
+    operate_joint *op_joint;
     State *st;
     Controller *ctrl;
 };

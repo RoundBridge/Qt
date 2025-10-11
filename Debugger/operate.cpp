@@ -123,3 +123,10 @@ void Operate::on_continueStrip_clicked(bool checked)
     mCtrl->setParam(End_actuator, CONTINUE_STRIP, &checked, sizeof(checked));
 }
 
+void Operate::on_joint_oprate_clicked()
+{
+    MainWindow* p = dynamic_cast<MainWindow*>(mParent);
+    hide();
+    p->getJointOperateInstance()->show();
+}
+

@@ -41,6 +41,8 @@ private slots:
 
     void on_continueStrip_clicked(bool checked);
 
+    void on_joint_oprate_clicked();
+
 private:
     QWidget *mParent;
     Ui::Operate *ui;
