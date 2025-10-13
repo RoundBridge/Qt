@@ -21,6 +21,16 @@ public:
 private slots:
     void on_back_clicked();
 
+    void on_stopAttitude_clicked();
+
+    void on_recoverAttitude_clicked();
+
+    void on_pauseAttitude_clicked();
+
+    void on_resumeAttitude_clicked();
+
+    void on_resetAttitude_clicked();
+
 private:
     Ui::operate_joint *ui;
     QWidget *mParent;

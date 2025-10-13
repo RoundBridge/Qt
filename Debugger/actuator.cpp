@@ -2,7 +2,7 @@
 #include "controller.h"
 #include "actuator.h"
 
-Actuator::Actuator(Controller* c, const char* remoteIp, quint16 remotePort, Link* link, int id):End(c, remoteIp, remotePort, link, id) {
+Actuator::Actuator(Controller* c, const char* remoteIp, quint16 remotePort, Link* link, const std::string& id):End(c, remoteIp, remotePort, link, id) {
     mContinueStrip = false;
     memset(&mRemoteState, 0, sizeof(mRemoteState));
 }

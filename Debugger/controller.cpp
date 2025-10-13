@@ -9,15 +9,15 @@ Controller::Controller(QObject *parent)
     mCtrlCmd = 0;
     mIsStop = mIsPause = false;
     mWin = dynamic_cast<MainWindow*>(parent);
-    memset(mEndSet, 0, sizeof(mEndSet));
     memset(mLinkSet, 0, sizeof(mLinkSet));
 
     for (int i = Link_UDP; i < Link_num; ++i) {
         mLinkSet[i] = Link::createLink(i, 0);
     }
 
-    mEndSet[End_actuator] = End::createEnd(this, mLinkSet[Link_UDP], End_actuator);
-    mEndSet[End_joint] = End::createEnd(this, mLinkSet[Link_UDP], End_joint);
+    mEndSet[MAIN_ACTUATOR_NAME] = mEndCreator.create(MAIN_ACTUATOR_NAME, this, mLinkSet[Link_UDP]);
+    mEndSet[JOINT_NAME] = mEndCreator.create(JOINT_NAME, this, mLinkSet[Link_UDP]);
+    mEndSet[ATTITUDE_NAME] = mEndCreator.create(ATTITUDE_NAME, this, mLinkSet[Link_UDP]);
 
     mElapsedTimer.start();
 
@@ -29,56 +29,42 @@ Controller::Controller(QObject *parent)
     mQueryTimer.start(15000);
 }
 
-bool Controller::setParam(int32_t end, uint32_t key, void* data, uint32_t dataLen) {
+bool Controller::setParam(const std::string& end, uint32_t key, void* data, uint32_t dataLen) {
     if (mEndSet[end] && data && dataLen > 0) {
         return mEndSet[end]->setParam(key, data, dataLen);
     }
     return false;
 }
 
-bool Controller::getParam(int32_t end, uint32_t key, void* data, uint32_t dataLen) {
+bool Controller::getParam(const std::string& end, uint32_t key, void* data, uint32_t dataLen) {
     if (mEndSet[end] && data && dataLen > 0) {
         return mEndSet[end]->getParam(key, data, dataLen);
     }
     return false;
 }
 
-bool Controller::dealCmd(uint32_t cmd, int32_t end) {
-    bool ret = true;
-
+bool Controller::dealCmd(uint32_t cmd, const std::string& end) {
     mIsStop = cmd == CTRL_STOP ? true : false;
     mIsPause = cmd == CTRL_PAUSE ? true : false;
     mCtrlCmd = cmd;
 
-    if (end >= End_actuator && end < End_num) {
-        if (!mEndSet[end]) {
-            qDebug() << "End " << end << " not exist";
-            return false;
-        }
+    auto it = mEndSet.find(end);
+    if (it != mEndSet.end()) {
         return mEndSet[end]->execute(cmd);
+    } else {
+        qDebug() << "End " << end << " not exist";
+        return false;
     }
-
-    for (int i = 0; i < End_num; ++i) {
-        if (!mEndSet[i]) {
-            continue;
-        }
-        if (!mEndSet[i]->execute(cmd)) {
-            ret = false;
-        }
-    }
-    return ret;
 }
 
 bool Controller::query() {
     qint64 tick = getElapsedTimeMs();
 
-    for (int i = 0; i < End_num; ++i) {
-        if (!mEndSet[i]) {
-            continue;
-        }
-        mEndSet[i]->updateEndConnectState(false, tick); //检测是否断连
-        mEndSet[i]->query();
+    for (auto it = mEndSet.begin(); it != mEndSet.end(); ++it) {
+        it->second->updateEndConnectState(false, tick); //检测是否断连
+        it->second->query();
     }
+
     mQueryTimer.setInterval(500);
     return true;
 }
@@ -155,7 +141,7 @@ void Controller::analyseJsonPacket(QJsonObject &data) {
     QJsonObject extra;
     QString from, to, msgType;
     qint64 tick = getElapsedTimeMs();
-    int end = End_num, cmd, seq, status;
+    int cmd, seq, status;
 
     qDebug() << "Received json data: " << data;
 
@@ -172,14 +158,12 @@ void Controller::analyseJsonPacket(QJsonObject &data) {
     }
 
     from = data.value("from").toString();
-    if (from == MAIN_ACTUATOR_NAME) {
-        end = End_actuator;
-    } else {
+    if (mEndSet.find(from.toStdString()) == mEndSet.end()) {
         qDebug() << "Not support data from " << from;
         return;
     }
 
-    mEndSet[end]->updateEndConnectState(true, tick); //没断连
+    mEndSet[from.toStdString()]->updateEndConnectState(true, tick); //没断连
 
     msgType = data.value("type").toString();
     cmd = data.value("cmd").toInt();
@@ -189,10 +173,10 @@ void Controller::analyseJsonPacket(QJsonObject &data) {
     if (msgType == "request") {
         // 处理来自外部的请求
     } else {
-        mEndSet[end]->updateEndExeState(cmd, seq, status);
+        mEndSet[from.toStdString()]->updateEndExeState(cmd, seq, status);
         if (data.contains("extra")) {
             extra = data.value("extra").toObject();
-            mEndSet[end]->parseExtraInfo(cmd, extra);
+            mEndSet[from.toStdString()]->parseExtraInfo(cmd, extra);
         }
     }
 }

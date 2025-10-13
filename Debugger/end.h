@@ -1,6 +1,8 @@
 #ifndef END_H
 #define END_H
 
+#include <functional>
+#include <map>
 #include "link.h"
 
 class Controller; //前置声明
@@ -8,14 +10,10 @@ class Controller; //前置声明
 class End
 {
 public:
-    End(Controller* controller, const char* remoteIp, quint16 remotePort, Link* link, int id = -1);
+    End(Controller* controller, const char* remoteIp, quint16 remotePort, Link* link, const std::string& id = "null end");
     virtual ~End();
 
-    static End* createEnd(Controller* controller, Link* link, int id = -1);
-    static void destroyEnd(End* e);
-
     bool execute(uint32_t ctrlCmd);
-    int getId() const {return mEndId;}
     bool isConnect() const {return mConnectState == Link_Connect;}
     void updateEndConnectState(bool valid, qint64 ms);
 
@@ -34,7 +32,8 @@ public:
     virtual bool resume();
     virtual bool reset();
 
-    int mEndId;
+    std::string mEndName;
+    // const std::string& mEndName; //为什么用这种方式，mEndName在后续使用时会变空，比如在End::execute中打印时就是空的
     int mConnectState;
 
     uint32_t mCmd, mSeq;
@@ -46,6 +45,21 @@ public:
     qint64 mLastReconnectMs;
     Controller* mCtrl;
     Link* mLink; //信令连接，公用连接，如果以后一个末端可以有多个连接，甚至连接的类型还可能不一样，那么差异化的连接放到子类里
+};
+
+class EndFactory {
+private:
+    using CreateMethod = std::function<std::unique_ptr<End>(Controller* c, Link* link)>;
+    std::map<std::string, CreateMethod> creators;
+
+public:
+    EndFactory();
+
+    void registerCreator(const std::string& type, CreateMethod creator) {
+        creators[type] = creator;
+    }
+
+    std::unique_ptr<End> create(const std::string& type, Controller* controller, Link* link);
 };
 
 #endif // END_H

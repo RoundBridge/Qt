@@ -1,7 +1,7 @@
 #include "controller.h"
 #include "joint.h"
 
-joint::joint(Controller* c, const char* remoteIp, quint16 remotePort, Link* link, int id):End(c, remoteIp, remotePort, link, id) {
+joint::joint(Controller* c, const char* remoteIp, quint16 remotePort, Link* link, const std::string& id):End(c, remoteIp, remotePort, link, id) {
 
 }
 
@@ -12,7 +12,7 @@ bool joint::setParam(uint32_t key, void* data, uint32_t dataLen) {
         return false;
 
     switch (key) {
-    case JOINT_ROTATE_PARAMS:
+    case JOINTOR_ROTATE_PARAMS:
         break;
     default:
         break;

@@ -10,7 +10,7 @@ operate_joint::operate_joint(QWidget *parent)
 {
     mParent = parent;
     ui->setupUi(this);
-    ui->stopRotate->setStyleSheet(
+    ui->stopAttitude->setStyleSheet(
         "QPushButton {"
         "   background-color: rgb(220, 0, 0);"
         "   color: white;"              // 白色文字
@@ -25,7 +25,7 @@ operate_joint::operate_joint(QWidget *parent)
         "}"
         );
 
-    ui->pauseRotate->setStyleSheet(
+    ui->pauseAttitude->setStyleSheet(
         "QPushButton {"
         "   background-color: rgb(220, 100, 0);"
         "   color: white;"              // 白色文字
@@ -86,3 +86,34 @@ void operate_joint::on_back_clicked()
     hide();
     p->getOperateInstance()->show();
 }
+
+void operate_joint::on_stopAttitude_clicked()
+{
+    qDebug() << "stop attitude clicked";
+    mCtrl->dealCmd(CTRL_STOP, ATTITUDE_NAME);
+}
+
+void operate_joint::on_recoverAttitude_clicked()
+{
+    qDebug() << "recover attitude clicked";
+    mCtrl->dealCmd(CTRL_RECOVER, ATTITUDE_NAME);
+}
+
+void operate_joint::on_pauseAttitude_clicked()
+{
+    qDebug() << "pause attitude clicked";
+    mCtrl->dealCmd(CTRL_PAUSE, ATTITUDE_NAME);
+}
+
+void operate_joint::on_resumeAttitude_clicked()
+{
+    qDebug() << "resume attitude clicked";
+    mCtrl->dealCmd(CTRL_RESUME, ATTITUDE_NAME);
+}
+
+void operate_joint::on_resetAttitude_clicked()
+{
+    qDebug() << "reset attitude clicked";
+    mCtrl->dealCmd(CTRL_RESET, ATTITUDE_NAME);
+}
+

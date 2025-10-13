@@ -3,22 +3,31 @@
 #include "crc.h"
 #include "controller.h"
 #include "actuator.h"
+#include "joint.h"
+#include "attitude.h"
 
 
-End* End::createEnd(Controller* controller, Link* link, int id) {
-    End* e = nullptr;
-    if (id == End_actuator) {
-        e = new Actuator(controller, MAIN_ACTUATOR_IP, MAIN_ACTUATOR_PORT, link);
+EndFactory::EndFactory() {
+    registerCreator(MAIN_ACTUATOR_NAME, [](Controller* c, Link* link) {
+        return std::make_unique<Actuator>(c, MAIN_ACTUATOR_IP, MAIN_ACTUATOR_PORT, link);
+    });
+    registerCreator(JOINT_NAME, [](Controller* c, Link* link) {
+        return std::make_unique<joint>(c, JOINT_IP, JOINT_PORT, link);
+    });
+    registerCreator(ATTITUDE_NAME, [](Controller* c, Link* link) {
+        return std::make_unique<attitude>(c, ATTITUDE_IP, ATTITUDE_PORT, link);
+    });
+}
+
+std::unique_ptr<End> EndFactory::create(const std::string& type, Controller* controller, Link* link) {
+    auto it = creators.find(type);
+    if (it != creators.end()) {
+        return it->second(controller, link);
     }
-    return e;
+    return nullptr;
 }
 
-void End::destroyEnd(End* e) {
-    delete e;
-}
-
-End::End(Controller* c, const char* remoteIp, quint16 remotePort, Link* link, int id) {
-    mEndId = id;
+End::End(Controller* c, const char* remoteIp, quint16 remotePort, Link* link, const std::string& id):mEndName(id) {
     mCtrl = c;
     mLink = link;
 
@@ -29,6 +38,8 @@ End::End(Controller* c, const char* remoteIp, quint16 remotePort, Link* link, in
     mConnectState = Link_Unknown;
     mHeartBeatMs = 0;
     mExeState = EXE_SUCCESS;
+
+    // qDebug() << "End " << mEndName << "created";
 }
 
 End::~End() {
@@ -51,7 +62,9 @@ void End::updateEndConnectState(bool valid, qint64 ms) {
 
 bool End::execute(uint32_t ctrlCmd) {
     if (mConnectState != Link_Connect) {
-        qDebug() << "End " << mEndId << " not connected";
+        qDebug() << "End " << mEndName << " not connected"; //多一对引号
+        // qDebug() << "End size " << mEndName.size();
+        // qDebug() << "End " << mEndName.c_str() << " not connected";
         return false;
     }
     return processCmd(ctrlCmd);
@@ -59,7 +72,6 @@ bool End::execute(uint32_t ctrlCmd) {
 
 uint32_t End::makeCmd(uint32_t c, uint32_t s, int32_t msgType, QByteArray& out, QJsonObject* extra, QByteArray* byte) {
     uint32_t bodyL = 0, hdrL = 0;
-    const char* to;
     QDMessageHdr hdr;
     QJsonObject root;
     QJsonDocument doc;
@@ -67,15 +79,6 @@ uint32_t End::makeCmd(uint32_t c, uint32_t s, int32_t msgType, QByteArray& out, 
     QByteArray crc_data;
     QByteArray send_data_head1;
     QByteArray send_data_head2;
-
-    if (mEndId == End_actuator) {
-        to = MAIN_ACTUATOR_NAME;
-    } else if (mEndId == End_joint) {
-        to = JOINT_NAME;
-    } else {
-        qDebug() << "end id " << mEndId << " not support";
-        return 0;
-    }
 
     if (c == MAX_UINT32) {
         return 0;
@@ -85,7 +88,7 @@ uint32_t End::makeCmd(uint32_t c, uint32_t s, int32_t msgType, QByteArray& out, 
 
     if (msgType == QD_MESSAGE_TYPE_JSON) {
         root.insert("from", CENTER_NAME);
-        root.insert("to", to);
+        root.insert("to", mEndName.c_str());
         root.insert("type", "request");
         root.insert("cmd", QJsonValue::fromVariant(QVariant(c)));
         root.insert("result", 1);
@@ -157,7 +160,7 @@ bool End::stop() {
 
     len = makeCmd(getMappedCmd(CTRL_STOP), ++mSeq, QD_MESSAGE_TYPE_JSON, out);
     if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
-        qDebug() << "stop end " << mEndId << " executed";
+        qDebug() << "stop end " << mEndName << " executed";
         ret = true;
     }
     return ret;
@@ -170,7 +173,7 @@ bool End::recover() {
 
     len = makeCmd(getMappedCmd(CTRL_RECOVER), ++mSeq, QD_MESSAGE_TYPE_JSON, out);
     if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
-        qDebug() << "recover end " << mEndId << " executed";
+        qDebug() << "recover end " << mEndName << " executed";
         ret = true;
     }
     return ret;
@@ -183,7 +186,7 @@ bool End::pause() {
 
     len = makeCmd(getMappedCmd(CTRL_PAUSE), ++mSeq, QD_MESSAGE_TYPE_JSON, out);
     if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
-        qDebug() << "pause end " << mEndId << " executed";
+        qDebug() << "pause end " << mEndName << " executed";
         ret = true;
     }
     return ret;
@@ -196,7 +199,7 @@ bool End::resume() {
 
     len = makeCmd(getMappedCmd(CTRL_RESUME), ++mSeq, QD_MESSAGE_TYPE_JSON, out);
     if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
-        qDebug() << "resume end " << mEndId << " executed";
+        qDebug() << "resume end " << mEndName << " executed";
         ret = true;
     }
     return ret;
@@ -209,7 +212,7 @@ bool End::reset() {
 
     len = makeCmd(getMappedCmd(CTRL_RESET), ++mSeq, QD_MESSAGE_TYPE_JSON, out);
     if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
-        qDebug() << "reset end " << mEndId << " executed";
+        qDebug() << "reset end " << mEndName << " executed";
         ret = true;
     }
     return ret;

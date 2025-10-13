@@ -103,7 +103,7 @@ typedef enum {
 class Actuator : public End
 {
 public:
-    Actuator(Controller* c, const char* remoteIp, quint16 remotePort, Link* link, int id = End_actuator);
+    Actuator(Controller* c, const char* remoteIp, quint16 remotePort, Link* link, const std::string& id = MAIN_ACTUATOR_NAME);
 
     virtual void updateEndExeState(uint32_t endCmd, uint32_t seq, uint32_t state);
     virtual void parseExtraInfo(uint32_t endCmd, QJsonObject &e);

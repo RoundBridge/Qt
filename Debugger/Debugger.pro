@@ -10,6 +10,7 @@ CONFIG += c++17
 
 SOURCES += \
     actuator.cpp \
+    attitude.cpp \
     controller.cpp \
     crc.c \
     end.cpp \
@@ -23,6 +24,7 @@ SOURCES += \
 
 HEADERS += \
     actuator.h \
+    attitude.h \
     common.h \
     controller.h \
     crc.h \

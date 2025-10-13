@@ -54,7 +54,7 @@ void Operate::setController(Controller* ctrl) {
 void Operate::on_reset_clicked()
 {
     qDebug() << "reset clicked";
-    mCtrl->dealCmd(CTRL_RESET);
+    mCtrl->dealCmd(CTRL_RESET, MAIN_ACTUATOR_NAME);
 }
 
 void Operate::on_contentIP_editingFinished()
@@ -77,31 +77,31 @@ void Operate::on_contentPort_editingFinished()
 void Operate::on_stop_clicked()
 {
     qDebug() << "stop clicked";
-    mCtrl->dealCmd(CTRL_STOP);
+    mCtrl->dealCmd(CTRL_STOP, MAIN_ACTUATOR_NAME);
 }
 
 void Operate::on_recover_clicked()
 {
     qDebug() << "recover clicked";
-    mCtrl->dealCmd(CTRL_RECOVER);
+    mCtrl->dealCmd(CTRL_RECOVER, MAIN_ACTUATOR_NAME);
 }
 
 void Operate::on_pause_clicked()
 {
     qDebug() << "pause clicked";
-    mCtrl->dealCmd(CTRL_PAUSE);
+    mCtrl->dealCmd(CTRL_PAUSE, MAIN_ACTUATOR_NAME);
 }
 
 void Operate::on_resume_clicked()
 {
     qDebug() << "resume clicked";
-    mCtrl->dealCmd(CTRL_RESUME);
+    mCtrl->dealCmd(CTRL_RESUME, MAIN_ACTUATOR_NAME);
 }
 
 void Operate::on_prepareStrip_clicked()
 {
     qDebug() << "prepare strip clicked";
-    mCtrl->dealCmd(CTRL_PREPARE_STRIP, End_actuator);
+    mCtrl->dealCmd(CTRL_PREPARE_STRIP, MAIN_ACTUATOR_NAME);
 }
 
 void Operate::on_ActuatorState_clicked()
@@ -114,13 +114,13 @@ void Operate::on_ActuatorState_clicked()
 void Operate::on_strip_clicked()
 {
     qDebug() << "strip clicked";
-    mCtrl->dealCmd(CTRL_STRIP, End_actuator);
+    mCtrl->dealCmd(CTRL_STRIP, MAIN_ACTUATOR_NAME);
 }
 
 void Operate::on_continueStrip_clicked(bool checked)
 {
     qDebug() << "continue strip " << checked;
-    mCtrl->setParam(End_actuator, CONTINUE_STRIP, &checked, sizeof(checked));
+    mCtrl->setParam(MAIN_ACTUATOR_NAME, CONTINUE_STRIP, &checked, sizeof(checked));
 }
 
 void Operate::on_joint_oprate_clicked()
