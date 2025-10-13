@@ -6,15 +6,47 @@ attitude::attitude(Controller* c, const char* remoteIp, quint16 remotePort, Link
 }
 
 bool attitude::setParam(uint32_t key, void* data, uint32_t dataLen) {
-    bool ret = false;
+    bool ret = true;
 
     if (!data || dataLen == 0)
         return false;
 
     switch (key) {
-    case ATTITUDE_ROTATE_PARAMS:
+    case SET_ATTITUDE_ROTATE_PATTERN:
+        mRotatePattern = *((int32_t*)data);
+        qDebug() << "attitude set rotate pattern " << mRotatePattern;
+        break;
+    case SET_ATTITUDE_ROTATE_ANGLE:
+        mRotateAngle = *((float*)data);
+        qDebug() << "attitude set rotate angle:" << mRotateAngle;
+        break;
+    case SET_ATTITUDE_ROTATE_SPEED:
+        mRotateSpeed = *((float*)data);
+        qDebug() << "attitude set rotate speed:" << mRotateSpeed;
+        break;
+    case SET_ATTITUDE_ROTATE_CURRENT:
+        mRotateCurrent = *((float*)data);
+        qDebug() << "attitude set rotate current:" << mRotateCurrent;
+        break;
+
+    case SET_ATTITUDE_PITCH_PATTERN:
+        mPitchPattern = *((int32_t*)data);
+        qDebug() << "attitude set pitch pattern " << mPitchPattern;
+        break;
+    case SET_ATTITUDE_PITCH_CURRENT:
+        mPitchCurrent = *((float*)data);
+        qDebug() << "attitude set pitch current:" << mPitchCurrent;
+        break;
+    case SET_ATTITUDE_PITCH_SPEED:
+        mPitchSpeed = *((float*)data);
+        qDebug() << "attitude set pitch speed:" << mPitchSpeed;
+        break;
+    case SET_ATTITUDE_PITCH_ANGLE:
+        mPitchAngle = *((float*)data);
+        qDebug() << "attitude set pitch angle:" << mPitchAngle;
         break;
     default:
+        ret = false;
         break;
     }
     return ret;
@@ -89,17 +121,81 @@ bool attitude::processCmd(uint32_t ctrlCmd) {
 }
 
 bool attitude::rotate() {
-    return false;
-}
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+    QJsonObject extra;
 
-bool attitude::pitch() {
-    return false;
+    extra.insert("pattern", mRotatePattern);
+    extra.insert("angle", mRotateAngle);
+    extra.insert("speed", mRotateSpeed/360.0); //旋转命令中，speed是每秒圈数
+    extra.insert("current", mRotateCurrent);
+
+    len = makeCmd(CMD_ATTITUDE_ROTATE, ++mSeq, QD_MESSAGE_TYPE_JSON, out, &extra);
+
+    // if (len) {
+    //     QByteArray msg_body = out.mid(sizeof(QDMessageHdr), out.size() - sizeof(QDMessageHdr));
+    //     QJsonDocument jsonDoc = QJsonDocument::fromJson(msg_body);
+    //     QString formattedJson = jsonDoc.toJson(QJsonDocument::Indented);
+    //     qDebug().noquote() << formattedJson;
+    // }
+
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "attitude rotate executed";
+        ret = true;
+    }
+    return ret;
 }
 
 bool attitude::stop_rotate() {
-    return false;
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+
+    len = makeCmd(CMD_ATTITUDE_ROTATE_STOP, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
+
+    // if (len) {
+    //     QByteArray msg_body = out.mid(sizeof(QDMessageHdr), out.size() - sizeof(QDMessageHdr));
+    //     QJsonDocument jsonDoc = QJsonDocument::fromJson(msg_body);
+    //     QString formattedJson = jsonDoc.toJson(QJsonDocument::Indented);
+    //     qDebug().noquote() << formattedJson;
+    // }
+
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "attitude rotate stop executed";
+        ret = true;
+    }
+    return ret;
+}
+
+bool attitude::pitch() {
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+    QJsonObject extra;
+
+    extra.insert("pattern", mPitchPattern);
+    extra.insert("angle", mPitchAngle);
+    extra.insert("speed", mPitchSpeed); //摆动命令中，speed是每秒度数
+    extra.insert("current", mPitchCurrent);
+
+    len = makeCmd(CMD_ATTITUDE_PITCH, ++mSeq, QD_MESSAGE_TYPE_JSON, out, &extra);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "attitude rotate executed";
+        ret = true;
+    }
+    return ret;
 }
 
 bool attitude::stop_pitch() {
-    return false;
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+
+    len = makeCmd(CMD_ATTITUDE_PITCH_STOP, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "attitude pitch stop executed";
+        ret = true;
+    }
+    return ret;
 }

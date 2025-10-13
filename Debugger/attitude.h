@@ -87,7 +87,10 @@ private:
     bool stop_pitch();
 
 private:
-
+    int32_t mRotatePattern = 3, mYawPattern = 3, mPitchPattern = 3;
+    float mRotateCurrent = -1, mRotateSpeed = -1, mRotateAngle = 0;
+    float mPitchCurrent = -1, mPitchSpeed = -1, mPitchAngle = 0;
+    float mYawCurrent = -1, mYawSpeed = -1, mYawAngle = 0;
 };
 
 #endif // ATTITUDE_H

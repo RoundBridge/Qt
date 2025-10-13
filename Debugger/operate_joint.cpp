@@ -71,6 +71,10 @@ operate_joint::operate_joint(QWidget *parent)
         );
 }
 
+void operate_joint::displayAttitudeCmdInfo(const QString &text) {
+    ui->aCmdInfo->appendPlainText(text);
+}
+
 operate_joint::~operate_joint()
 {
     delete ui;
@@ -117,3 +121,140 @@ void operate_joint::on_resetAttitude_clicked()
     mCtrl->dealCmd(CTRL_RESET, ATTITUDE_NAME);
 }
 
+void operate_joint::on_rotateAttitudeStop_clicked()
+{
+    qDebug() << "stop attitude rotate clicked";
+    mCtrl->dealCmd(CTRL_ATTITUDE_ROTATE_STOP, ATTITUDE_NAME);
+}
+
+void operate_joint::on_swingAttitudeStop_clicked()
+{
+    qDebug() << "stop attitude swing clicked";
+    mCtrl->dealCmd(CTRL_ATTITUDE_PITCH_STOP, ATTITUDE_NAME);
+}
+
+void operate_joint::on_yawAttitudeStop_clicked()
+{
+    qDebug() << "stop attitude yaw clicked";
+    mCtrl->dealCmd(CTRL_ATTITUDE_YAW_STOP, ATTITUDE_NAME);
+}
+
+void operate_joint::on_rPattern1Attitude_clicked()
+{
+    int32_t v = 1;
+    mCtrl->setParam(ATTITUDE_NAME, SET_ATTITUDE_ROTATE_PATTERN, &v, sizeof(v));
+}
+
+void operate_joint::on_rPattern2Attitude_clicked()
+{
+    int32_t v = 2;
+    mCtrl->setParam(ATTITUDE_NAME, SET_ATTITUDE_ROTATE_PATTERN, &v, sizeof(v));
+}
+
+void operate_joint::on_rPattern3Attitude_clicked()
+{
+    int32_t v = 3;
+    mCtrl->setParam(ATTITUDE_NAME, SET_ATTITUDE_ROTATE_PATTERN, &v, sizeof(v));
+}
+
+void operate_joint::on_rAngleAttitude_editingFinished()
+{
+    bool ok;
+    float ang = ui->rAngleAttitude->text().toFloat(&ok);
+
+    if (!ok) {
+        ang = 0;
+        qDebug() << "target rotate angle:" << ui->rAngleAttitude->text() << " error, set to default 0";
+    }
+    mCtrl->setParam(ATTITUDE_NAME, SET_ATTITUDE_ROTATE_ANGLE, &ang, sizeof(ang));
+}
+
+void operate_joint::on_rSpeedAttitude_v_editingFinished()
+{
+    bool ok;
+    float spd = ui->rSpeedAttitude_v->text().toFloat(&ok);
+
+    if (!ok) {
+        spd = -1;
+        qDebug() << "target rotate speed:" << ui->rSpeedAttitude_v->text() << " error, set to default -1";
+    }
+    mCtrl->setParam(ATTITUDE_NAME, SET_ATTITUDE_ROTATE_SPEED, &spd, sizeof(spd));
+}
+
+void operate_joint::on_rCurrentAttitude_v_editingFinished()
+{
+    bool ok;
+    float cur = ui->rCurrentAttitude_v->text().toFloat(&ok);
+
+    if (!ok) {
+        cur = -1;
+        qDebug() << "target rotate current:" << ui->rCurrentAttitude_v->text() << " error, set to default -1";
+    }
+    mCtrl->setParam(ATTITUDE_NAME, SET_ATTITUDE_ROTATE_CURRENT, &cur, sizeof(cur));
+}
+
+void operate_joint::on_rotateAttitude_clicked()
+{
+    qDebug() << "attitude rotate clicked";
+    mCtrl->dealCmd(CTRL_ATTITUDE_ROTATE, ATTITUDE_NAME);
+}
+
+void operate_joint::on_pAngleAttitude_editingFinished()
+{
+    bool ok;
+    float ang = ui->pAngleAttitude->text().toFloat(&ok);
+
+    if (!ok) {
+        ang = 0;
+        qDebug() << "target swing angle:" << ui->pAngleAttitude->text() << " error, set to default 0";
+    }
+    mCtrl->setParam(ATTITUDE_NAME, SET_ATTITUDE_PITCH_ANGLE, &ang, sizeof(ang));
+}
+
+void operate_joint::on_pPattern1Attitude_clicked()
+{
+    int32_t v = 1;
+    mCtrl->setParam(ATTITUDE_NAME, SET_ATTITUDE_PITCH_PATTERN, &v, sizeof(v));
+}
+
+void operate_joint::on_pPattern2Attitude_clicked()
+{
+    int32_t v = 2;
+    mCtrl->setParam(ATTITUDE_NAME, SET_ATTITUDE_PITCH_PATTERN, &v, sizeof(v));
+}
+
+void operate_joint::on_pPattern3Attitude_clicked()
+{
+    int32_t v = 3;
+    mCtrl->setParam(ATTITUDE_NAME, SET_ATTITUDE_PITCH_PATTERN, &v, sizeof(v));
+}
+
+void operate_joint::on_pSpeedAttitude_v_editingFinished()
+{
+    bool ok;
+    float spd = ui->pSpeedAttitude_v->text().toFloat(&ok);
+
+    if (!ok) {
+        spd = -1;
+        qDebug() << "target swing speed:" << ui->pSpeedAttitude_v->text() << " error, set to default -1";
+    }
+    mCtrl->setParam(ATTITUDE_NAME, SET_ATTITUDE_PITCH_SPEED, &spd, sizeof(spd));
+}
+
+void operate_joint::on_pCurrentAttitude_v_editingFinished()
+{
+    bool ok;
+    float cur = ui->pCurrentAttitude_v->text().toFloat(&ok);
+
+    if (!ok) {
+        cur = -1;
+        qDebug() << "target swing current:" << ui->pCurrentAttitude_v->text() << " error, set to default -1";
+    }
+    mCtrl->setParam(ATTITUDE_NAME, SET_ATTITUDE_PITCH_CURRENT, &cur, sizeof(cur));
+}
+
+void operate_joint::on_swingAttitude_clicked()
+{
+    qDebug() << "attitude swing clicked";
+    mCtrl->dealCmd(CTRL_ATTITUDE_PITCH, ATTITUDE_NAME);
+}

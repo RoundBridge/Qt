@@ -95,7 +95,11 @@ uint32_t End::makeCmd(uint32_t c, uint32_t s, int32_t msgType, QByteArray& out, 
         root["seq"] = QJsonValue::fromVariant(QVariant(s));
         if(extra) root.insert("extra", *extra);
         doc.setObject(root);
-        array = doc.toJson(QJsonDocument::Compact);
+        // array = doc.toJson(QJsonDocument::Compact);
+        array = doc.toJson(QJsonDocument::Indented); //Indented方式便于观察
+
+        // 观察
+        mCtrl->dispCmdInfo(mEndName, array);
     } else {
         if(byte) array = *byte;
     }
@@ -117,6 +121,7 @@ uint32_t End::makeCmd(uint32_t c, uint32_t s, int32_t msgType, QByteArray& out, 
     hdr.crc32 = qToBigEndian(hdr.crc32);
     out2 << hdr.magic << hdr.crc32;
     out = send_data_head2 + crc_data;
+
 
     return out.size();
 }

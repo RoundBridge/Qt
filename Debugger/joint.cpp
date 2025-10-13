@@ -90,11 +90,11 @@ bool joint::rotate() {
     return false;
 }
 
-bool joint::pitch() {
+bool joint::stop_rotate() {
     return false;
 }
 
-bool joint::stop_rotate() {
+bool joint::pitch() {
     return false;
 }
 

@@ -42,6 +42,7 @@ public:
     bool dealCmd(uint32_t cmd, const std::string& end); //cmd 取值 ControllerCmd
     bool setParam(const std::string& end, uint32_t key, void* data, uint32_t dataLen);
     bool getParam(const std::string& end, uint32_t key, void* data, uint32_t dataLen);
+    void dispCmdInfo(const std::string& end, const QString& info);
 
 private:
     bool query();

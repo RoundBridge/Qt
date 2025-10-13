@@ -59,14 +59,23 @@ typedef struct {
 } ActuatorState;
 
 typedef enum {
-    ACTUATOR_STATE = 1,         //获取机头状态，ActuatorState类型
-    BYPASS_GRIPPER_STATE = 2,   //获取引流线抓线器状态
-    CONTINUE_STRIP = 3,         //获取/设置是否全速剥皮，bool类型
-    ATTITUDE_ROTATE_PARAMS = 4, //获取/设置姿态关节旋转电机参数
-    ATTITUDE_PITCH_PARAMS = 5,  //获取/设置姿态关节俯仰电机参数
-    ATTITUDE_YAW_PARAMS = 6,    //获取/设置姿态关节偏航电机参数
-    JOINTOR_ROTATE_PARAMS = 7,  //获取/设置旋转关节旋转电机参数
-    JOINTOR_PITCH_PARAMS = 8,   //获取/设置旋转关节俯仰电机参数
+    ACTUATOR_STATE = 1,             //获取机头状态，ActuatorState类型
+    BYPASS_GRIPPER_STATE,           //获取引流线抓线器状态
+    CONTINUE_STRIP,                 //获取/设置是否全速剥皮，bool类型
+
+    SET_ATTITUDE_ROTATE_PATTERN,    //设置姿态关节旋转模式
+    SET_ATTITUDE_ROTATE_ANGLE,      //设置姿态关节旋转角度
+    SET_ATTITUDE_ROTATE_SPEED,      //设置姿态关节旋转速度
+    SET_ATTITUDE_ROTATE_CURRENT,    //设置姿态关节旋转速度
+    SET_ATTITUDE_PITCH_PATTERN,     //设置姿态关节摆动模式
+    SET_ATTITUDE_PITCH_ANGLE,       //设置姿态关节摆动角度
+    SET_ATTITUDE_PITCH_SPEED,       //设置姿态关节摆动速度
+    SET_ATTITUDE_PITCH_CURRENT,     //设置姿态关节摆动速度
+
+    ATTITUDE_PITCH_PARAMS,      //获取/设置姿态关节俯仰电机参数
+    ATTITUDE_YAW_PARAMS,        //获取/设置姿态关节偏航电机参数
+    JOINTOR_ROTATE_PARAMS,      //获取/设置旋转关节旋转电机参数
+    JOINTOR_PITCH_PARAMS,       //获取/设置旋转关节俯仰电机参数
 } ParamKeyOpt;
 
 #endif // COMMON_H

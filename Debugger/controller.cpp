@@ -43,6 +43,12 @@ bool Controller::getParam(const std::string& end, uint32_t key, void* data, uint
     return false;
 }
 
+void Controller::dispCmdInfo(const std::string& end, const QString& info) {
+    if (end == ATTITUDE_NAME) {
+        mWin->getJointOperateInstance()->displayAttitudeCmdInfo(info);
+    }
+}
+
 bool Controller::dealCmd(uint32_t cmd, const std::string& end) {
     mIsStop = cmd == CTRL_STOP ? true : false;
     mIsPause = cmd == CTRL_PAUSE ? true : false;
