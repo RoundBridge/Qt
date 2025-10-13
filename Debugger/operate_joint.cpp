@@ -10,7 +10,7 @@ operate_joint::operate_joint(QWidget *parent)
 {
     mParent = parent;
     ui->setupUi(this);
-    ui->stop->setStyleSheet(
+    ui->stopRotate->setStyleSheet(
         "QPushButton {"
         "   background-color: rgb(220, 0, 0);"
         "   color: white;"              // 白色文字
@@ -25,7 +25,37 @@ operate_joint::operate_joint(QWidget *parent)
         "}"
         );
 
-    ui->pause->setStyleSheet(
+    ui->pauseRotate->setStyleSheet(
+        "QPushButton {"
+        "   background-color: rgb(220, 100, 0);"
+        "   color: white;"              // 白色文字
+        "   border: 2px solid #8B4513;" // 棕色边框
+        "}"
+        "QPushButton:hover {"
+        "   background-color: rgb(255, 100, 0);" // 悬停时
+        "}"
+        "QPushButton:pressed {"
+        "    background-color: rgb(200, 100, 0);"
+        "    border-style: inset;"
+        "}"
+        );
+
+    ui->stopJoint->setStyleSheet(
+        "QPushButton {"
+        "   background-color: rgb(220, 0, 0);"
+        "   color: white;"              // 白色文字
+        "   border: 2px solid #8B4513;" // 棕色边框
+        "}"
+        "QPushButton:hover {"
+        "   background-color: rgb(255, 0, 0);" // 悬停时
+        "}"
+        "QPushButton:pressed {"
+        "    background-color: rgb(200, 0, 0);"
+        "    border-style: inset;"
+        "}"
+        );
+
+    ui->pauseJoint->setStyleSheet(
         "QPushButton {"
         "   background-color: rgb(220, 100, 0);"
         "   color: white;"              // 白色文字
@@ -56,4 +86,3 @@ void operate_joint::on_back_clicked()
     hide();
     p->getOperateInstance()->show();
 }
-

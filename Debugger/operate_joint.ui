@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QPushButton" name="recover">
+  <widget class="QPushButton" name="recoverRotate">
    <property name="geometry">
     <rect>
      <x>610</x>
@@ -35,7 +35,7 @@
     <string>恢    复</string>
    </property>
   </widget>
-  <widget class="QLabel" name="targetIP">
+  <widget class="QLabel" name="targetRotateIP">
    <property name="geometry">
     <rect>
      <x>64</x>
@@ -56,7 +56,7 @@
     <string>姿态关节 IP</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="contentIP">
+  <widget class="QLineEdit" name="contentRotateIP">
    <property name="geometry">
     <rect>
      <x>170</x>
@@ -71,7 +71,7 @@
     </font>
    </property>
   </widget>
-  <widget class="QPushButton" name="pause">
+  <widget class="QPushButton" name="pauseRotate">
    <property name="geometry">
     <rect>
      <x>730</x>
@@ -93,7 +93,7 @@
     <string>暂    停</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="contentPort">
+  <widget class="QLineEdit" name="contentRotatePort">
    <property name="geometry">
     <rect>
      <x>370</x>
@@ -108,7 +108,7 @@
     </font>
    </property>
   </widget>
-  <widget class="QPushButton" name="reset">
+  <widget class="QPushButton" name="resetRotate">
    <property name="geometry">
     <rect>
      <x>970</x>
@@ -127,7 +127,7 @@
     <string>复    位</string>
    </property>
   </widget>
-  <widget class="QLabel" name="targetIPort">
+  <widget class="QLabel" name="targetRotatePort">
    <property name="geometry">
     <rect>
      <x>320</x>
@@ -148,7 +148,7 @@
     <string>端口</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="stop">
+  <widget class="QPushButton" name="stopRotate">
    <property name="geometry">
     <rect>
      <x>490</x>
@@ -170,7 +170,7 @@
     <string>急    停</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="resume">
+  <widget class="QPushButton" name="resumeRotate">
    <property name="geometry">
     <rect>
      <x>850</x>
@@ -211,7 +211,7 @@
     <string>返    回</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="rotate">
+  <widget class="QPushButton" name="rotateRotate">
    <property name="geometry">
     <rect>
      <x>64</x>
@@ -230,7 +230,7 @@
     <string>rotate</string>
    </property>
   </widget>
-  <widget class="QGroupBox" name="rGroupBox">
+  <widget class="QGroupBox" name="rGroupBoxRotate">
    <property name="geometry">
     <rect>
      <x>190</x>
@@ -242,7 +242,7 @@
    <property name="title">
     <string/>
    </property>
-   <widget class="QRadioButton" name="rPattern1">
+   <widget class="QRadioButton" name="rPattern1Rotate">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -255,7 +255,7 @@
      <string>正向</string>
     </property>
    </widget>
-   <widget class="QRadioButton" name="rPattern2">
+   <widget class="QRadioButton" name="rPattern2Rotate">
     <property name="geometry">
      <rect>
       <x>80</x>
@@ -268,7 +268,7 @@
      <string>反向</string>
     </property>
    </widget>
-   <widget class="QRadioButton" name="rPattern3">
+   <widget class="QRadioButton" name="rPattern3Rotate">
     <property name="geometry">
      <rect>
       <x>150</x>
@@ -281,7 +281,7 @@
      <string>角度</string>
     </property>
    </widget>
-   <widget class="QLineEdit" name="rAngle">
+   <widget class="QLineEdit" name="rAngleRotate">
     <property name="geometry">
      <rect>
       <x>210</x>
@@ -292,7 +292,7 @@
     </property>
    </widget>
   </widget>
-  <widget class="QLabel" name="rSpeed">
+  <widget class="QLabel" name="rSpeedRotate">
    <property name="geometry">
     <rect>
      <x>530</x>
@@ -310,7 +310,7 @@
     <string>速度(度/秒)</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="rSpeed_v">
+  <widget class="QLineEdit" name="rSpeedRotate_v">
    <property name="geometry">
     <rect>
      <x>620</x>
@@ -325,7 +325,7 @@
     </font>
    </property>
   </widget>
-  <widget class="QLabel" name="rCurrent">
+  <widget class="QLabel" name="rCurrentRotate">
    <property name="geometry">
     <rect>
      <x>720</x>
@@ -343,7 +343,7 @@
     <string>电流(mA)</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="rCurrent_v">
+  <widget class="QLineEdit" name="rCurrentRotate_v">
    <property name="geometry">
     <rect>
      <x>800</x>
@@ -358,7 +358,7 @@
     </font>
    </property>
   </widget>
-  <widget class="QLabel" name="pCurrent">
+  <widget class="QLabel" name="pCurrentRotate">
    <property name="geometry">
     <rect>
      <x>720</x>
@@ -376,7 +376,7 @@
     <string>电流(mA)</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="pCurrent_v">
+  <widget class="QLineEdit" name="pCurrentRotate_v">
    <property name="geometry">
     <rect>
      <x>800</x>
@@ -391,7 +391,7 @@
     </font>
    </property>
   </widget>
-  <widget class="QGroupBox" name="pGroupBox">
+  <widget class="QGroupBox" name="pGroupBoxRotate">
    <property name="geometry">
     <rect>
      <x>190</x>
@@ -403,7 +403,7 @@
    <property name="title">
     <string/>
    </property>
-   <widget class="QRadioButton" name="pPattern1">
+   <widget class="QRadioButton" name="pPattern1Rotate">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -416,7 +416,7 @@
      <string>正向</string>
     </property>
    </widget>
-   <widget class="QRadioButton" name="pPattern2">
+   <widget class="QRadioButton" name="pPattern2Rotate">
     <property name="geometry">
      <rect>
       <x>80</x>
@@ -429,7 +429,7 @@
      <string>反向</string>
     </property>
    </widget>
-   <widget class="QRadioButton" name="pPattern3">
+   <widget class="QRadioButton" name="pPattern3Rotate">
     <property name="geometry">
      <rect>
       <x>150</x>
@@ -442,7 +442,7 @@
      <string>角度</string>
     </property>
    </widget>
-   <widget class="QLineEdit" name="pAngle">
+   <widget class="QLineEdit" name="pAngleRotate">
     <property name="geometry">
      <rect>
       <x>210</x>
@@ -453,7 +453,7 @@
     </property>
    </widget>
   </widget>
-  <widget class="QPushButton" name="swing">
+  <widget class="QPushButton" name="swingRotate">
    <property name="geometry">
     <rect>
      <x>64</x>
@@ -472,7 +472,7 @@
     <string>swing</string>
    </property>
   </widget>
-  <widget class="QLabel" name="pSpeed">
+  <widget class="QLabel" name="pSpeedRotate">
    <property name="geometry">
     <rect>
      <x>530</x>
@@ -490,7 +490,7 @@
     <string>速度(度/秒)</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="pSpeed_v">
+  <widget class="QLineEdit" name="pSpeedRotate_v">
    <property name="geometry">
     <rect>
      <x>620</x>
@@ -505,7 +505,7 @@
     </font>
    </property>
   </widget>
-  <widget class="QLabel" name="yCurrent">
+  <widget class="QLabel" name="yCurrentRotate">
    <property name="geometry">
     <rect>
      <x>720</x>
@@ -523,7 +523,7 @@
     <string>电流(mA)</string>
    </property>
   </widget>
-  <widget class="QLabel" name="ySpeed">
+  <widget class="QLabel" name="ySpeedRotate">
    <property name="geometry">
     <rect>
      <x>530</x>
@@ -541,7 +541,7 @@
     <string>速度(度/秒)</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="yCurrent_v">
+  <widget class="QLineEdit" name="yCurrentRotate_v">
    <property name="geometry">
     <rect>
      <x>800</x>
@@ -556,7 +556,7 @@
     </font>
    </property>
   </widget>
-  <widget class="QPushButton" name="yaw">
+  <widget class="QPushButton" name="yawRotate">
    <property name="geometry">
     <rect>
      <x>64</x>
@@ -575,7 +575,7 @@
     <string>yaw</string>
    </property>
   </widget>
-  <widget class="QGroupBox" name="yGroupBox">
+  <widget class="QGroupBox" name="yGroupBoxRotate">
    <property name="geometry">
     <rect>
      <x>190</x>
@@ -587,7 +587,7 @@
    <property name="title">
     <string/>
    </property>
-   <widget class="QRadioButton" name="yPattern1">
+   <widget class="QRadioButton" name="yPattern1Rotate">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -600,7 +600,7 @@
      <string>正向</string>
     </property>
    </widget>
-   <widget class="QRadioButton" name="yPattern2">
+   <widget class="QRadioButton" name="yPattern2Rotate">
     <property name="geometry">
      <rect>
       <x>80</x>
@@ -613,7 +613,7 @@
      <string>反向</string>
     </property>
    </widget>
-   <widget class="QRadioButton" name="yPattern3">
+   <widget class="QRadioButton" name="yPattern3Rotate">
     <property name="geometry">
      <rect>
       <x>150</x>
@@ -626,7 +626,7 @@
      <string>角度</string>
     </property>
    </widget>
-   <widget class="QLineEdit" name="yAngle">
+   <widget class="QLineEdit" name="yAngleRotate">
     <property name="geometry">
      <rect>
       <x>210</x>
@@ -637,11 +637,484 @@
     </property>
    </widget>
   </widget>
-  <widget class="QLineEdit" name="ySpeed_v">
+  <widget class="QLineEdit" name="ySpeedRotate_v">
    <property name="geometry">
     <rect>
      <x>620</x>
      <y>200</y>
+     <width>64</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="recoverJoint">
+   <property name="geometry">
+    <rect>
+     <x>610</x>
+     <y>280</y>
+     <width>80</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="autoFillBackground">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>恢    复</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="pCurrentJoint_v">
+   <property name="geometry">
+    <rect>
+     <x>800</x>
+     <y>404</y>
+     <width>80</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pauseJoint">
+   <property name="geometry">
+    <rect>
+     <x>730</x>
+     <y>280</y>
+     <width>80</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="autoFillBackground">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>暂    停</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="rCurrentJoint">
+   <property name="geometry">
+    <rect>
+     <x>720</x>
+     <y>344</y>
+     <width>90</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>电流(mA)</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="targetJointPort">
+   <property name="geometry">
+    <rect>
+     <x>320</x>
+     <y>280</y>
+     <width>48</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="lineWidth">
+    <number>1</number>
+   </property>
+   <property name="text">
+    <string>端口</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rotateJont">
+   <property name="geometry">
+    <rect>
+     <x>64</x>
+     <y>344</y>
+     <width>96</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>rotate</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="resumeJoint">
+   <property name="geometry">
+    <rect>
+     <x>850</x>
+     <y>280</y>
+     <width>80</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="autoFillBackground">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>继    续</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="pSpeedJoint_v">
+   <property name="geometry">
+    <rect>
+     <x>620</x>
+     <y>404</y>
+     <width>64</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="rSpeedJoint_v">
+   <property name="geometry">
+    <rect>
+     <x>620</x>
+     <y>344</y>
+     <width>64</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="rCurrentJoint_v">
+   <property name="geometry">
+    <rect>
+     <x>800</x>
+     <y>344</y>
+     <width>80</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+  </widget>
+  <widget class="QLabel" name="pSpeedJoint">
+   <property name="geometry">
+    <rect>
+     <x>530</x>
+     <y>404</y>
+     <width>96</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>速度(度/秒)</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="stopJoint">
+   <property name="geometry">
+    <rect>
+     <x>490</x>
+     <y>280</y>
+     <width>80</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="autoFillBackground">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>急    停</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="targetJointIP">
+   <property name="geometry">
+    <rect>
+     <x>64</x>
+     <y>280</y>
+     <width>108</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="lineWidth">
+    <number>1</number>
+   </property>
+   <property name="text">
+    <string>旋转关节 IP</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="swingJoint">
+   <property name="geometry">
+    <rect>
+     <x>64</x>
+     <y>404</y>
+     <width>96</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>swing</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="contentJointIP">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>280</y>
+     <width>128</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+  </widget>
+  <widget class="QLabel" name="pCurrentJoint">
+   <property name="geometry">
+    <rect>
+     <x>720</x>
+     <y>404</y>
+     <width>90</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>电流(mA)</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="rSpeedJoint">
+   <property name="geometry">
+    <rect>
+     <x>530</x>
+     <y>344</y>
+     <width>96</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>速度(度/秒)</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="resetJoint">
+   <property name="geometry">
+    <rect>
+     <x>970</x>
+     <y>280</y>
+     <width>80</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>复    位</string>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="rGroupBoxJoint">
+   <property name="geometry">
+    <rect>
+     <x>190</x>
+     <y>344</y>
+     <width>311</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string/>
+   </property>
+   <widget class="QRadioButton" name="rPattern1Joint">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>5</y>
+      <width>64</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>正向</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="rPattern2Joint">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>5</y>
+      <width>64</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>反向</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="rPattern3Joint">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>5</y>
+      <width>64</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>角度</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="rAngleJoint">
+    <property name="geometry">
+     <rect>
+      <x>210</x>
+      <y>4</y>
+      <width>96</width>
+      <height>27</height>
+     </rect>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QGroupBox" name="pGroupBoxJoint">
+   <property name="geometry">
+    <rect>
+     <x>190</x>
+     <y>404</y>
+     <width>311</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string/>
+   </property>
+   <widget class="QRadioButton" name="pPattern1Joint">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>5</y>
+      <width>64</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>正向</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="pPattern2Joint">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>5</y>
+      <width>64</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>反向</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="pPattern3Joint">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>5</y>
+      <width>64</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>角度</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="pAngleJoint">
+    <property name="geometry">
+     <rect>
+      <x>210</x>
+      <y>4</y>
+      <width>96</width>
+      <height>27</height>
+     </rect>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QLineEdit" name="contentJointPort">
+   <property name="geometry">
+    <rect>
+     <x>370</x>
+     <y>280</y>
      <width>64</width>
      <height>32</height>
     </rect>
