@@ -87,7 +87,9 @@ private:
     bool stop_pitch();
 
 private:
-
+    int32_t mRotatePattern = 3, mPitchPattern = 3;
+    float mRotateCurrent = -1, mRotateSpeed = -1, mRotateAngle = 0;
+    float mPitchCurrent = -1, mPitchSpeed = -1, mPitchAngle = 0;
 };
 
 #endif // JOINT_H

@@ -181,7 +181,7 @@ bool attitude::pitch() {
 
     len = makeCmd(CMD_ATTITUDE_PITCH, ++mSeq, QD_MESSAGE_TYPE_JSON, out, &extra);
     if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
-        qDebug() << "attitude rotate executed";
+        qDebug() << "attitude pitch executed";
         ret = true;
     }
     return ret;

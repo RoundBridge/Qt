@@ -75,6 +75,18 @@ void operate_joint::displayAttitudeCmdInfo(const QString &text) {
     ui->aCmdInfo->appendPlainText(text);
 }
 
+void operate_joint::displayAttitudeCmdRespInfo(const QString &text) {
+    ui->aCmdRespInfo->appendPlainText(text);
+}
+
+void operate_joint::displayJointCmdInfo(const QString &text) {
+    ui->pCmdInfo->appendPlainText(text);
+}
+
+void operate_joint::displayJointCmdRespInfo(const QString &text) {
+    ui->pCmdRespInfo->appendPlainText(text);
+}
+
 operate_joint::~operate_joint()
 {
     delete ui;
@@ -258,3 +270,166 @@ void operate_joint::on_swingAttitude_clicked()
     qDebug() << "attitude swing clicked";
     mCtrl->dealCmd(CTRL_ATTITUDE_PITCH, ATTITUDE_NAME);
 }
+
+void operate_joint::on_stopJoint_clicked()
+{
+    qDebug() << "stop joint clicked";
+    mCtrl->dealCmd(CTRL_STOP, JOINT_NAME);
+}
+
+void operate_joint::on_recoverJoint_clicked()
+{
+    qDebug() << "recover joint clicked";
+    mCtrl->dealCmd(CTRL_RECOVER, JOINT_NAME);
+}
+
+void operate_joint::on_pauseJoint_clicked()
+{
+    qDebug() << "pause joint clicked";
+    mCtrl->dealCmd(CTRL_PAUSE, JOINT_NAME);
+}
+
+void operate_joint::on_resumeJoint_clicked()
+{
+    qDebug() << "resume joint clicked";
+    mCtrl->dealCmd(CTRL_RESUME, JOINT_NAME);
+}
+
+void operate_joint::on_resetJoint_clicked()
+{
+    qDebug() << "reset joint clicked";
+    mCtrl->dealCmd(CTRL_RESET, JOINT_NAME);
+}
+
+void operate_joint::on_rPattern1Joint_clicked()
+{
+    int32_t v = 1;
+    mCtrl->setParam(JOINT_NAME, SET_JOINT_ROTATE_PATTERN, &v, sizeof(v));
+}
+
+void operate_joint::on_rPattern2Joint_clicked()
+{
+    int32_t v = 2;
+    mCtrl->setParam(JOINT_NAME, SET_JOINT_ROTATE_PATTERN, &v, sizeof(v));
+}
+
+void operate_joint::on_rPattern3Joint_clicked()
+{
+    int32_t v = 3;
+    mCtrl->setParam(JOINT_NAME, SET_JOINT_ROTATE_PATTERN, &v, sizeof(v));
+}
+
+void operate_joint::on_rAngleJoint_editingFinished()
+{
+    bool ok;
+    float ang = ui->rAngleJoint->text().toFloat(&ok);
+
+    if (!ok) {
+        ang = 0;
+        qDebug() << "target rotate angle:" << ui->rAngleJoint->text() << " error, set to default 0";
+    }
+    mCtrl->setParam(JOINT_NAME, SET_JOINT_ROTATE_ANGLE, &ang, sizeof(ang));
+}
+
+void operate_joint::on_rSpeedJoint_v_editingFinished()
+{
+    bool ok;
+    float spd = ui->rSpeedJoint_v->text().toFloat(&ok);
+
+    if (!ok) {
+        spd = -1;
+        qDebug() << "target rotate speed:" << ui->rSpeedJoint_v->text() << " error, set to default -1";
+    }
+    mCtrl->setParam(JOINT_NAME, SET_JOINT_ROTATE_SPEED, &spd, sizeof(spd));
+}
+
+void operate_joint::on_rCurrentJoint_v_editingFinished()
+{
+    bool ok;
+    float cur = ui->rCurrentJoint_v->text().toFloat(&ok);
+
+    if (!ok) {
+        cur = -1;
+        qDebug() << "target rotate current:" << ui->rCurrentJoint_v->text() << " error, set to default -1";
+    }
+    mCtrl->setParam(JOINT_NAME, SET_JOINT_ROTATE_CURRENT, &cur, sizeof(cur));
+}
+
+void operate_joint::on_rotateJont_clicked()
+{
+    qDebug() << "joint rotate clicked";
+    mCtrl->dealCmd(CTRL_JOINT_ROTATE, JOINT_NAME);
+}
+
+void operate_joint::on_rotateJointStop_clicked()
+{
+    qDebug() << "stop joint rotate clicked";
+    mCtrl->dealCmd(CTRL_JOINT_ROTATE_STOP, JOINT_NAME);
+}
+
+void operate_joint::on_pPattern1Joint_clicked()
+{
+    int32_t v = 1;
+    mCtrl->setParam(JOINT_NAME, SET_JOINT_PITCH_PATTERN, &v, sizeof(v));
+}
+
+void operate_joint::on_pPattern2Joint_clicked()
+{
+    int32_t v = 2;
+    mCtrl->setParam(JOINT_NAME, SET_JOINT_PITCH_PATTERN, &v, sizeof(v));
+}
+
+void operate_joint::on_pPattern3Joint_clicked()
+{
+    int32_t v = 3;
+    mCtrl->setParam(JOINT_NAME, SET_JOINT_PITCH_PATTERN, &v, sizeof(v));
+}
+
+void operate_joint::on_pAngleJoint_editingFinished()
+{
+    bool ok;
+    float ang = ui->pAngleJoint->text().toFloat(&ok);
+
+    if (!ok) {
+        ang = 0;
+        qDebug() << "target pitch angle:" << ui->pAngleJoint->text() << " error, set to default 0";
+    }
+    mCtrl->setParam(JOINT_NAME, SET_JOINT_PITCH_ANGLE, &ang, sizeof(ang));
+}
+
+void operate_joint::on_pSpeedJoint_v_editingFinished()
+{
+    bool ok;
+    float spd = ui->pSpeedJoint_v->text().toFloat(&ok);
+
+    if (!ok) {
+        spd = -1;
+        qDebug() << "target pitch speed:" << ui->pSpeedJoint_v->text() << " error, set to default -1";
+    }
+    mCtrl->setParam(JOINT_NAME, SET_JOINT_PITCH_SPEED, &spd, sizeof(spd));
+}
+
+void operate_joint::on_pCurrentJoint_v_editingFinished()
+{
+    bool ok;
+    float cur = ui->pCurrentJoint_v->text().toFloat(&ok);
+
+    if (!ok) {
+        cur = -1;
+        qDebug() << "target pitch current:" << ui->pCurrentJoint_v->text() << " error, set to default -1";
+    }
+    mCtrl->setParam(JOINT_NAME, SET_JOINT_PITCH_CURRENT, &cur, sizeof(cur));
+}
+
+void operate_joint::on_swingJoint_clicked()
+{
+    qDebug() << "joint pitch clicked";
+    mCtrl->dealCmd(CTRL_JOINT_PITCH, JOINT_NAME);
+}
+
+void operate_joint::on_swingJointStop_clicked()
+{
+    qDebug() << "stop joint pitch clicked";
+    mCtrl->dealCmd(CTRL_JOINT_PITCH_STOP, JOINT_NAME);
+}
+

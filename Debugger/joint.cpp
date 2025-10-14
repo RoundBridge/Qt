@@ -6,15 +6,47 @@ joint::joint(Controller* c, const char* remoteIp, quint16 remotePort, Link* link
 }
 
 bool joint::setParam(uint32_t key, void* data, uint32_t dataLen) {
-    bool ret = false;
+    bool ret = true;
 
     if (!data || dataLen == 0)
         return false;
 
     switch (key) {
-    case JOINTOR_ROTATE_PARAMS:
+    case SET_JOINT_ROTATE_PATTERN:
+        mRotatePattern = *((int32_t*)data);
+        qDebug() << "joint set rotate pattern " << mRotatePattern;
+        break;
+    case SET_JOINT_ROTATE_ANGLE:
+        mRotateAngle = *((float*)data);
+        qDebug() << "joint set rotate angle:" << mRotateAngle;
+        break;
+    case SET_JOINT_ROTATE_SPEED:
+        mRotateSpeed = *((float*)data);
+        qDebug() << "joint set rotate speed:" << mRotateSpeed;
+        break;
+    case SET_JOINT_ROTATE_CURRENT:
+        mRotateCurrent = *((float*)data);
+        qDebug() << "joint set rotate current:" << mRotateCurrent;
+        break;
+
+    case SET_JOINT_PITCH_PATTERN:
+        mPitchPattern = *((int32_t*)data);
+        qDebug() << "joint set pitch pattern " << mPitchPattern;
+        break;
+    case SET_JOINT_PITCH_CURRENT:
+        mPitchCurrent = *((float*)data);
+        qDebug() << "joint set pitch current:" << mPitchCurrent;
+        break;
+    case SET_JOINT_PITCH_SPEED:
+        mPitchSpeed = *((float*)data);
+        qDebug() << "joint set pitch speed:" << mPitchSpeed;
+        break;
+    case SET_JOINT_PITCH_ANGLE:
+        mPitchAngle = *((float*)data);
+        qDebug() << "joint set pitch angle:" << mPitchAngle;
         break;
     default:
+        ret = false;
         break;
     }
     return ret;
@@ -87,17 +119,65 @@ bool joint::processCmd(uint32_t ctrlCmd) {
 }
 
 bool joint::rotate() {
-    return false;
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+    QJsonObject extra;
+
+    extra.insert("pattern", mRotatePattern);
+    extra.insert("angle", mRotateAngle);
+    extra.insert("speed", mRotateSpeed/360.0); //旋转命令中，speed是每秒圈数
+    extra.insert("current", mRotateCurrent);
+
+    len = makeCmd(CMD_JOINT_ROTATE, ++mSeq, QD_MESSAGE_TYPE_JSON, out, &extra);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "joint rotate executed";
+        ret = true;
+    }
+    return ret;
 }
 
 bool joint::stop_rotate() {
-    return false;
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+
+    len = makeCmd(CMD_JOINT_ROTATE_STOP, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "joint rotate stop executed";
+        ret = true;
+    }
+    return ret;
 }
 
 bool joint::pitch() {
-    return false;
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+    QJsonObject extra;
+
+    extra.insert("pattern", mPitchPattern);
+    extra.insert("angle", mPitchAngle);
+    extra.insert("speed", mPitchSpeed); //摆动命令中，speed是每秒度数
+    extra.insert("current", mPitchCurrent);
+
+    len = makeCmd(CMD_JOINT_PITCH, ++mSeq, QD_MESSAGE_TYPE_JSON, out, &extra);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "joint pitch executed";
+        ret = true;
+    }
+    return ret;
 }
 
 bool joint::stop_pitch() {
-    return false;
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+
+    len = makeCmd(CMD_JOINT_PITCH_STOP, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "joint pitch stop executed";
+        ret = true;
+    }
+    return ret;
 }

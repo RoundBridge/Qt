@@ -5,7 +5,7 @@
 
 #define MAX_UINT32          0xffffffff
 
-#define CENTER_NAME         "center"
+#define CENTER_NAME         "debug"
 #define CENTER_PORT         6666
 
 #define MAIN_ACTUATOR_NAME  "actuator"
@@ -66,16 +66,25 @@ typedef enum {
     SET_ATTITUDE_ROTATE_PATTERN,    //设置姿态关节旋转模式
     SET_ATTITUDE_ROTATE_ANGLE,      //设置姿态关节旋转角度
     SET_ATTITUDE_ROTATE_SPEED,      //设置姿态关节旋转速度
-    SET_ATTITUDE_ROTATE_CURRENT,    //设置姿态关节旋转速度
+    SET_ATTITUDE_ROTATE_CURRENT,    //设置姿态关节旋转电流
     SET_ATTITUDE_PITCH_PATTERN,     //设置姿态关节摆动模式
     SET_ATTITUDE_PITCH_ANGLE,       //设置姿态关节摆动角度
     SET_ATTITUDE_PITCH_SPEED,       //设置姿态关节摆动速度
-    SET_ATTITUDE_PITCH_CURRENT,     //设置姿态关节摆动速度
+    SET_ATTITUDE_PITCH_CURRENT,     //设置姿态关节摆动电流
 
-    ATTITUDE_PITCH_PARAMS,      //获取/设置姿态关节俯仰电机参数
-    ATTITUDE_YAW_PARAMS,        //获取/设置姿态关节偏航电机参数
-    JOINTOR_ROTATE_PARAMS,      //获取/设置旋转关节旋转电机参数
-    JOINTOR_PITCH_PARAMS,       //获取/设置旋转关节俯仰电机参数
+    SET_JOINT_ROTATE_PATTERN,       //设置旋转关节旋转模式
+    SET_JOINT_ROTATE_ANGLE,         //设置旋转关节旋转角度
+    SET_JOINT_ROTATE_SPEED,         //设置旋转关节旋转速度
+    SET_JOINT_ROTATE_CURRENT,       //设置旋转关节旋转电流
+    SET_JOINT_PITCH_PATTERN,        //设置旋转关节摆动模式
+    SET_JOINT_PITCH_ANGLE,          //设置旋转关节摆动角度
+    SET_JOINT_PITCH_SPEED,          //设置旋转关节摆动速度
+    SET_JOINT_PITCH_CURRENT,        //设置旋转关节摆动电流
+
+    // ATTITUDE_PITCH_PARAMS,      //获取/设置姿态关节俯仰电机参数
+    // ATTITUDE_YAW_PARAMS,        //获取/设置姿态关节偏航电机参数
+    // JOINTOR_ROTATE_PARAMS,      //获取/设置旋转关节旋转电机参数
+    // JOINTOR_PITCH_PARAMS,       //获取/设置旋转关节俯仰电机参数
 } ParamKeyOpt;
 
 #endif // COMMON_H

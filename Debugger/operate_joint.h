@@ -20,6 +20,12 @@ public:
 
     void displayAttitudeCmdInfo(const QString &text);
 
+    void displayJointCmdInfo(const QString &text);
+
+    void displayAttitudeCmdRespInfo(const QString &text);
+
+    void displayJointCmdRespInfo(const QString &text);
+
 private slots:
     void on_back_clicked();
 
@@ -66,6 +72,48 @@ private slots:
     void on_pSpeedAttitude_v_editingFinished();
 
     void on_pCurrentAttitude_v_editingFinished();
+
+    void on_stopJoint_clicked();
+
+    void on_recoverJoint_clicked();
+
+    void on_pauseJoint_clicked();
+
+    void on_resumeJoint_clicked();
+
+    void on_resetJoint_clicked();
+
+    void on_rPattern1Joint_clicked();
+
+    void on_rPattern2Joint_clicked();
+
+    void on_rPattern3Joint_clicked();
+
+    void on_rAngleJoint_editingFinished();
+
+    void on_rSpeedJoint_v_editingFinished();
+
+    void on_rCurrentJoint_v_editingFinished();
+
+    void on_rotateJont_clicked();
+
+    void on_rotateJointStop_clicked();
+
+    void on_pPattern1Joint_clicked();
+
+    void on_pPattern2Joint_clicked();
+
+    void on_pPattern3Joint_clicked();
+
+    void on_pAngleJoint_editingFinished();
+
+    void on_pSpeedJoint_v_editingFinished();
+
+    void on_pCurrentJoint_v_editingFinished();
+
+    void on_swingJoint_clicked();
+
+    void on_swingJointStop_clicked();
 
 private:
     Ui::operate_joint *ui;

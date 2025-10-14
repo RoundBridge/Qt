@@ -46,6 +46,16 @@ bool Controller::getParam(const std::string& end, uint32_t key, void* data, uint
 void Controller::dispCmdInfo(const std::string& end, const QString& info) {
     if (end == ATTITUDE_NAME) {
         mWin->getJointOperateInstance()->displayAttitudeCmdInfo(info);
+    } else if (end == JOINT_NAME) {
+        mWin->getJointOperateInstance()->displayJointCmdInfo(info);
+    }
+}
+
+void Controller::dispCmdRespInfo(const std::string& end, const QString& info) {
+    if (end == ATTITUDE_NAME) {
+        mWin->getJointOperateInstance()->displayAttitudeCmdRespInfo(info);
+    } else if (end == JOINT_NAME) {
+        mWin->getJointOperateInstance()->displayJointCmdRespInfo(info);
     }
 }
 
@@ -180,6 +190,8 @@ void Controller::analyseJsonPacket(QJsonObject &data) {
         // 处理来自外部的请求
     } else {
         mEndSet[from.toStdString()]->updateEndExeState(cmd, seq, status);
+        // 命令返回观察
+        dispCmdRespInfo(from.toStdString(), QString(QJsonDocument(data).toJson(QJsonDocument::Indented)));
         if (data.contains("extra")) {
             extra = data.value("extra").toObject();
             mEndSet[from.toStdString()]->parseExtraInfo(cmd, extra);
