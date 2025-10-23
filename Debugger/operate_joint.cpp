@@ -433,3 +433,62 @@ void operate_joint::on_swingJointStop_clicked()
     mCtrl->dealCmd(CTRL_JOINT_PITCH_STOP, JOINT_NAME);
 }
 
+void operate_joint::on_yPattern1Attitude_clicked()
+{
+    int32_t v = 1;
+    mCtrl->setParam(ATTITUDE_NAME, SET_ATTITUDE_YAW_PATTERN, &v, sizeof(v));
+}
+
+void operate_joint::on_yPattern2Attitude_clicked()
+{
+    int32_t v = 2;
+    mCtrl->setParam(ATTITUDE_NAME, SET_ATTITUDE_YAW_PATTERN, &v, sizeof(v));
+}
+
+void operate_joint::on_yPattern3Attitude_clicked()
+{
+    int32_t v = 3;
+    mCtrl->setParam(ATTITUDE_NAME, SET_ATTITUDE_YAW_PATTERN, &v, sizeof(v));
+}
+
+void operate_joint::on_yAngleAttitude_editingFinished()
+{
+    bool ok;
+    float ang = ui->yAngleAttitude->text().toFloat(&ok);
+
+    if (!ok) {
+        ang = 0;
+        qDebug() << "target yaw angle:" << ui->yAngleAttitude->text() << " error, set to default 0";
+    }
+    mCtrl->setParam(ATTITUDE_NAME, SET_ATTITUDE_YAW_ANGLE, &ang, sizeof(ang));
+}
+
+void operate_joint::on_ySpeedAttitude_v_editingFinished()
+{
+    bool ok;
+    float spd = ui->ySpeedAttitude_v->text().toFloat(&ok);
+
+    if (!ok) {
+        spd = -1;
+        qDebug() << "target yaw speed:" << ui->ySpeedAttitude_v->text() << " error, set to default -1";
+    }
+    mCtrl->setParam(ATTITUDE_NAME, SET_ATTITUDE_YAW_SPEED, &spd, sizeof(spd));
+}
+
+void operate_joint::on_yCurrentAttitude_v_editingFinished()
+{
+    bool ok;
+    float cur = ui->yCurrentAttitude_v->text().toFloat(&ok);
+
+    if (!ok) {
+        cur = -1;
+        qDebug() << "target yaw current:" << ui->yCurrentAttitude_v->text() << " error, set to default -1";
+    }
+    mCtrl->setParam(ATTITUDE_NAME, SET_ATTITUDE_YAW_CURRENT, &cur, sizeof(cur));
+}
+
+void operate_joint::on_yawAttitude_clicked()
+{
+    qDebug() << "attitude yaw clicked";
+    mCtrl->dealCmd(CTRL_ATTITUDE_YAW, ATTITUDE_NAME);
+}

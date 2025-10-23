@@ -15,18 +15,27 @@ typedef enum {
     //"current"，类型float，单位（mA），(可选)
     CMD_ATTITUDE_ROTATE,
     CMD_ATTITUDE_ROTATE_STOP,
-    //机头左右上下摆动，带参数，"pattern"，类型int，1-左侧下摆，2-右侧下摆，3-摆动特定角度，
-    //"angle"，类型double，正数左侧上翘，负数左侧下摆（单位，度），在pattern为3时使用。
+    //电池侧为左侧
+    //机头左右上下摆动，带参数，"pattern"，类型int，1-向后摆（机头远离观察者，角度减小），2-向前摆（机头靠近观察者，角度增大），3-摆动特定角度，
+    //"angle"，类型double，正数向前摆（机头靠近观察者，角度增大），负数向后摆（机头远离观察者，角度减小）（单位，度），在pattern为3时使用。
     //"speed"，类型float，单位（每秒度数），表示摆动的速度(可选)
     //"current"，类型float，单位（mA），(可选)
     CMD_ATTITUDE_PITCH,
     CMD_ATTITUDE_PITCH_STOP,
 
+    //电池侧为左侧
+    //机头左右上下偏转，带参数，"pattern"，类型int，1-电池侧上升，角度增大，2-电池侧下降，角度减小，3-摆动特定角度，
+    //"angle"，类型double，正数电池侧上升，角度增大，电池侧下降，角度减小（单位，度），在pattern为3时使用。
+    //"speed"，类型float，单位（每秒度数），表示摆动的速度(可选)
+    //"current"，类型float，单位（mA），(可选)
+    CMD_ATTITUDE_YAW,
+    CMD_ATTITUDE_YAW_STOP,
+
     // extra 规则：
     // "module": 代表的模块，"attitude"...
     // "type": 代表操作的类型，"motor"
     // "tid": （int32类型）当"type"是"motor"类型时，id号表示电机id号的组合（位或方式），各个电机的ID号如下：
-    //         8：旋转电机，9：摆动电机
+    //         8：旋转电机，9：摆动电机，10：偏转电机
     //         比如要开启或者关闭这两个电机的电源，则 tid = (1 << 8) || (1 << 9)
     CMD_ATTITUDE_POWER_ON,
     CMD_ATTITUDE_POWER_OFF,
@@ -49,10 +58,11 @@ typedef enum {
      *
      * "key": int32类型
      * "value": int32类型，>0表示要设置的值，==0表示查询当前的值以及设备默认值，<0无效
-     *
      *          key = 1：设置旋转电机是否强制运动，value = 1 表示强制运动，value = 2 表示非强制运动（危险动作，不要轻易使用，主要用于急救，比如光耦坏了电机断电了）
      *          key = 2：设置摆动电机是否强制运动，value = 1 表示强制运动，value = 2 表示非强制运动（危险动作，不要轻易使用，主要用于急救，比如光耦坏了电机断电了）
      *          key = 3：设置摆动电机最大摆动角度，value 表示摆动角度的10倍，比如设置76.5度，则 value = 765，回复的 value 和 default 也放大了10倍
+     *          key = 4：设置偏转电机是否强制运动，value = 1 表示强制运动，value = 2 表示非强制运动（危险动作，不要轻易使用，主要用于急救，比如光耦坏了电机断电了）
+     *          key = 5：设置偏转电机最大摆动角度，value 表示偏转角度的10倍，比如设置76.5度，则 value = 765，回复的 value 和 default 也放大了10倍
      * 回复："key": int32类型，原封不动地将主控传过来的值返回回去，"value"，int32类型，表示设置前的值，"default"，int32类型，表示设备默认值
      */
     CMD_ATTITUDE_SET_PARAMS = 0x99,        //不支持
@@ -85,6 +95,8 @@ private:
     bool pitch();
     bool stop_rotate();
     bool stop_pitch();
+    bool yaw();
+    bool stop_yaw();
 
 private:
     int32_t mRotatePattern = 3, mYawPattern = 3, mPitchPattern = 3;

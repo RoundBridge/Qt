@@ -71,6 +71,10 @@ typedef enum {
     SET_ATTITUDE_PITCH_ANGLE,       //设置姿态关节摆动角度
     SET_ATTITUDE_PITCH_SPEED,       //设置姿态关节摆动速度
     SET_ATTITUDE_PITCH_CURRENT,     //设置姿态关节摆动电流
+    SET_ATTITUDE_YAW_PATTERN,       //设置姿态关节摆动模式
+    SET_ATTITUDE_YAW_ANGLE,         //设置姿态关节摆动角度
+    SET_ATTITUDE_YAW_SPEED,         //设置姿态关节摆动速度
+    SET_ATTITUDE_YAW_CURRENT,       //设置姿态关节摆动电流
 
     SET_JOINT_ROTATE_PATTERN,       //设置旋转关节旋转模式
     SET_JOINT_ROTATE_ANGLE,         //设置旋转关节旋转角度

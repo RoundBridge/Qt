@@ -77,6 +77,8 @@ uint32_t joint::getMappedCmd(uint32_t ctrlCmd) {
         return CMD_JOINT_PITCH;
     case CTRL_JOINT_PITCH_STOP:
         return CMD_JOINT_PITCH_STOP;
+    case CTRL_QUERY:
+        return CMD_JOINT_QUERY;
     default:
         break;
     }

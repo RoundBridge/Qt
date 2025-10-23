@@ -63,6 +63,8 @@ uint32_t Actuator::getMappedCmd(uint32_t ctrlCmd) {
         return CMD_MAIN_ACTUATOR_PREPARE_STRIP;
     case CTRL_STRIP:
         return CMD_MAIN_ACTUATOR_DO_STRIP;
+    case CTRL_QUERY:
+        return CMD_MAIN_ACTUATOR_QUERY;
     default:
         break;
     }

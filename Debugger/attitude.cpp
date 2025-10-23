@@ -45,6 +45,24 @@ bool attitude::setParam(uint32_t key, void* data, uint32_t dataLen) {
         mPitchAngle = *((float*)data);
         qDebug() << "attitude set pitch angle:" << mPitchAngle;
         break;
+
+    case SET_ATTITUDE_YAW_PATTERN:
+        mYawPattern = *((int32_t*)data);
+        qDebug() << "attitude set yaw pattern " << mYawPattern;
+        break;
+    case SET_ATTITUDE_YAW_ANGLE:
+        mYawAngle = *((float*)data);
+        qDebug() << "attitude set yaw angle:" << mYawAngle;
+        break;
+    case SET_ATTITUDE_YAW_SPEED:
+        mYawSpeed = *((float*)data);
+        qDebug() << "attitude set yaw speed:" << mYawSpeed;
+        break;
+    case SET_ATTITUDE_YAW_CURRENT:
+        mYawCurrent = *((float*)data);
+        qDebug() << "attitude set yaw current:" << mYawCurrent;
+        break;
+
     default:
         ret = false;
         break;
@@ -78,7 +96,11 @@ uint32_t attitude::getMappedCmd(uint32_t ctrlCmd) {
     case CTRL_ATTITUDE_PITCH_STOP:
         return CMD_ATTITUDE_PITCH_STOP;
     case CTRL_ATTITUDE_YAW:
+        return CMD_ATTITUDE_YAW;
     case CTRL_ATTITUDE_YAW_STOP:
+        return CMD_ATTITUDE_YAW_STOP;
+    case CTRL_QUERY:
+        return CMD_ATTITUDE_QUERY;
     default:
         break;
     }
@@ -112,6 +134,10 @@ bool attitude::processCmd(uint32_t ctrlCmd) {
         return pitch();
     case CMD_ATTITUDE_PITCH_STOP:
         return stop_pitch();
+    case CMD_ATTITUDE_YAW:
+        return yaw();
+    case CMD_ATTITUDE_YAW_STOP:
+        return stop_yaw();
     default:
         mExeState = EXE_FAIL;
         qDebug() << "Controller cmd " << ctrlCmd << " not support";
@@ -195,6 +221,38 @@ bool attitude::stop_pitch() {
     len = makeCmd(CMD_ATTITUDE_PITCH_STOP, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
     if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
         qDebug() << "attitude pitch stop executed";
+        ret = true;
+    }
+    return ret;
+}
+
+bool attitude::yaw() {
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+    QJsonObject extra;
+
+    extra.insert("pattern", mYawPattern);
+    extra.insert("angle", mYawAngle);
+    extra.insert("speed", mYawSpeed); //yaw命令中，speed是每秒度数
+    extra.insert("current", mYawCurrent);
+
+    len = makeCmd(CMD_ATTITUDE_YAW, ++mSeq, QD_MESSAGE_TYPE_JSON, out, &extra);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "attitude yaw executed";
+        ret = true;
+    }
+    return ret;
+}
+
+bool attitude::stop_yaw() {
+    bool ret = false;
+    uint32_t len = 0;
+    QByteArray out;
+
+    len = makeCmd(CMD_ATTITUDE_YAW_STOP, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "attitude yaw stop executed";
         ret = true;
     }
     return ret;

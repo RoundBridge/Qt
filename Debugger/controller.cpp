@@ -79,6 +79,7 @@ bool Controller::query() {
     for (auto it = mEndSet.begin(); it != mEndSet.end(); ++it) {
         it->second->updateEndConnectState(false, tick); //检测是否断连
         it->second->query();
+        // qDebug() << "Query end " << it->second->mEndName;
     }
 
     mQueryTimer.setInterval(500);

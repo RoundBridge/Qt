@@ -115,6 +115,20 @@ private slots:
 
     void on_swingJointStop_clicked();
 
+    void on_yPattern1Attitude_clicked();
+
+    void on_yPattern2Attitude_clicked();
+
+    void on_yPattern3Attitude_clicked();
+
+    void on_yAngleAttitude_editingFinished();
+
+    void on_ySpeedAttitude_v_editingFinished();
+
+    void on_yCurrentAttitude_v_editingFinished();
+
+    void on_yawAttitude_clicked();
+
 private:
     Ui::operate_joint *ui;
     QWidget *mParent;
