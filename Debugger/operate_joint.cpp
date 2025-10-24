@@ -69,6 +69,9 @@ operate_joint::operate_joint(QWidget *parent)
         "    border-style: inset;"
         "}"
         );
+
+    // 设置 QPlainTextEdit 的右键菜单策略为自定义上下文菜单，便于触发 customContextMenuRequested 信号
+    ui->aCmdInfo->setContextMenuPolicy(Qt::CustomContextMenu);
 }
 
 void operate_joint::displayAttitudeCmdInfo(const QString &text) {
@@ -492,3 +495,11 @@ void operate_joint::on_yawAttitude_clicked()
     qDebug() << "attitude yaw clicked";
     mCtrl->dealCmd(CTRL_ATTITUDE_YAW, ATTITUDE_NAME);
 }
+
+void operate_joint::on_aCmdInfo_customContextMenuRequested(const QPoint &pos)
+{
+    qDebug() << "mouse point (" << pos.x() << ", " << pos.y() << ")";
+    ui->aCmdInfo->clear(); //清空内容
+    // 更详细的可参考：https://www.cnblogs.com/acmexyz/p/11551565.html
+}
+

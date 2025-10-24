@@ -129,6 +129,8 @@ private slots:
 
     void on_yawAttitude_clicked();
 
+    void on_aCmdInfo_customContextMenuRequested(const QPoint &pos);
+
 private:
     Ui::operate_joint *ui;
     QWidget *mParent;
