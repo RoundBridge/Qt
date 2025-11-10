@@ -27,11 +27,33 @@ std::unique_ptr<End> EndFactory::create(const std::string& type, Controller* con
     return nullptr;
 }
 
+void EndWorker::doWork() {
+    Qt::HANDLE id = QThread::currentThreadId();
+    qDebug() << "EndWorker thread " << id << "start.";
+
+    for (;;) {
+        if (mStop) {
+            mEnd->doWorkProc(true);
+            qDebug() << "EndWorker thread " << id << "exit.";
+            emit workFinished(); // 通知主线程任务结束
+            return;
+        } else {
+            mEnd->doWorkProc(false);
+        }
+        QThread::msleep(mWorkSleepGapMs);
+    }
+}
+
+void EndWorker::stopWork() {
+    // QMutexLocker locker(&mMutex);
+    mStop = true;
+}
+
 End::End(Controller* c, const char* remoteIp, quint16 remotePort, Link* link, const std::string& id):mEndName(id) {
     mCtrl = c;
     mLink = link;
 
-    mCmd = 0, mSeq = 1;
+    mCmd = 0, mSeq = 1, mRodState = ROD_STATE_NONE;
     mRemotePort = remotePort;
     mRemoteIp.setAddress(remoteIp);
 
@@ -67,6 +89,37 @@ bool End::execute(uint32_t ctrlCmd) {
         // qDebug() << "End " << mEndName.c_str() << " not connected";
         return false;
     }
+
+    // 摇杆命令暂定为公用命令，统一在父类 End 处理
+    if (ctrlCmd == CTRL_ROD) {
+        if (mRodState == ROD_STATE_NONE) {
+            if (!mWorker) {
+                qDebug() << "Null mWorker!";
+                return false;
+            }
+            mWorker->stopWork();
+            return true;
+        }
+        // 1. 创建线程和任务对象
+        QThread* workerThread = new QThread();
+        mWorker = new EndWorker(this);
+
+        // 2. 将任务对象转移到子线程
+        mWorker->moveToThread(workerThread);
+
+        // 3. 关联信号槽：线程启动时执行任务，任务结束时退出线程
+        QObject::connect(workerThread, &QThread::started, mWorker, &EndWorker::doWork);
+        QObject::connect(mWorker, &EndWorker::workFinished, workerThread, &QThread::quit);
+
+        // 4. 线程退出后自动释放资源（避免内存泄漏）
+        QObject::connect(workerThread, &QThread::finished, mWorker, &EndWorker::deleteLater);
+        QObject::connect(workerThread, &QThread::finished, workerThread, &QThread::deleteLater);
+
+        // 5. 启动线程（开始执行任务）
+        workerThread->start();
+        return true;
+    }
+
     return processCmd(ctrlCmd);
 }
 
@@ -151,6 +204,11 @@ uint32_t End::getMappedCmd(uint32_t ctrlCmd) {
 
 bool End::processCmd(uint32_t ctrlCmd) {
     (void)ctrlCmd;
+    return false;
+}
+
+bool End::doWorkProc(bool stop) {
+    (void)stop;
     return false;
 }
 

@@ -59,9 +59,21 @@ typedef struct {
 } ActuatorState;
 
 typedef enum {
+    ROD_STATE_NONE = 0,
+    ROD_UP_ACTIVATE = (1 << 0),
+    ROD_BOTTOM_ACTIVATE = (1 << 1),
+    ROD_LEFT_ACTIVATE = (1 << 2),
+    ROD_RIGHT_ACTIVATE = (1 << 3),
+    ROD_ROTATE_ANTICLOCKWISE = (1 << 4),
+    ROD_ROTATE_CLOCKWISE = (1 << 5)
+} RodState;
+
+typedef enum {
     ACTUATOR_STATE = 1,             //获取机头状态，ActuatorState类型
     BYPASS_GRIPPER_STATE,           //获取引流线抓线器状态
     CONTINUE_STRIP,                 //获取/设置是否全速剥皮，bool类型
+
+    SET_ROD_PARAM,                  //设置摇杆命令参数
 
     SET_ATTITUDE_ROTATE_PATTERN,    //设置姿态关节旋转模式
     SET_ATTITUDE_ROTATE_ANGLE,      //设置姿态关节旋转角度

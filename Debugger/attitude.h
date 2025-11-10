@@ -89,6 +89,7 @@ public:
     virtual bool processCmd(uint32_t ctrlCmd);
     virtual bool setParam(uint32_t key, void* data, uint32_t dataLen);
     virtual bool getParam(uint32_t key, void* data, uint32_t dataLen);
+    virtual bool doWorkProc(bool stop);
 
 private:
     bool rotate();

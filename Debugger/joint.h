@@ -67,7 +67,7 @@ typedef enum {
     CMD_JOINT_QUIT,                     //不支持
 
     // extra 规则：
-    CMD_JOINT_TEST = 0xff                     //不支持
+    CMD_JOINT_TEST = 0xff               //不支持
 } JointCmd;
 
 class joint : public End
@@ -79,6 +79,7 @@ public:
     virtual bool processCmd(uint32_t ctrlCmd);
     virtual bool setParam(uint32_t key, void* data, uint32_t dataLen);
     virtual bool getParam(uint32_t key, void* data, uint32_t dataLen);
+    virtual bool doWorkProc(bool stop);
 
 private:
     bool rotate();

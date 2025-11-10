@@ -503,3 +503,93 @@ void operate_joint::on_aCmdInfo_customContextMenuRequested(const QPoint &pos)
     // 更详细的可参考：https://www.cnblogs.com/acmexyz/p/11551565.html
 }
 
+// 绝缘杆摆杆往角度增大方向摆动
+void operate_joint::on_rightRodUp_pressed()
+{
+    uint32_t state = ROD_UP_ACTIVATE;
+    mCtrl->setParam(JOINT_NAME, SET_ROD_PARAM, &state, sizeof(state));
+    mCtrl->dealCmd(CTRL_ROD, JOINT_NAME);
+}
+
+void operate_joint::on_rightRodUp_released()
+{
+    uint32_t state = ROD_STATE_NONE;
+    mCtrl->setParam(JOINT_NAME, SET_ROD_PARAM, &state, sizeof(state));
+    mCtrl->dealCmd(CTRL_ROD, JOINT_NAME);
+}
+
+// 绝缘杆摆杆往角度减小方向摆动
+void operate_joint::on_rightRodDown_pressed()
+{
+    uint32_t state = ROD_BOTTOM_ACTIVATE;
+    mCtrl->setParam(JOINT_NAME, SET_ROD_PARAM, &state, sizeof(state));
+    mCtrl->dealCmd(CTRL_ROD, JOINT_NAME);
+}
+
+void operate_joint::on_rightRodDown_released()
+{
+    uint32_t state = ROD_STATE_NONE;
+    mCtrl->setParam(JOINT_NAME, SET_ROD_PARAM, &state, sizeof(state));
+    mCtrl->dealCmd(CTRL_ROD, JOINT_NAME);
+}
+
+// 姿态板pitch方向往角度增大方向摆动
+void operate_joint::on_leftRodUp_pressed()
+{
+    uint32_t state = ROD_UP_ACTIVATE;
+    mCtrl->setParam(ATTITUDE_NAME, SET_ROD_PARAM, &state, sizeof(state));
+    mCtrl->dealCmd(CTRL_ROD, ATTITUDE_NAME);
+}
+
+void operate_joint::on_leftRodUp_released()
+{
+    uint32_t state = ROD_STATE_NONE;
+    mCtrl->setParam(ATTITUDE_NAME, SET_ROD_PARAM, &state, sizeof(state));
+    mCtrl->dealCmd(CTRL_ROD, ATTITUDE_NAME);
+}
+
+// 姿态板pitch方向往角度减小方向摆动
+void operate_joint::on_leftRodDown_pressed()
+{
+    uint32_t state = ROD_BOTTOM_ACTIVATE;
+    mCtrl->setParam(ATTITUDE_NAME, SET_ROD_PARAM, &state, sizeof(state));
+    mCtrl->dealCmd(CTRL_ROD, ATTITUDE_NAME);
+}
+
+void operate_joint::on_leftRodDown_released()
+{
+    uint32_t state = ROD_STATE_NONE;
+    mCtrl->setParam(ATTITUDE_NAME, SET_ROD_PARAM, &state, sizeof(state));
+    mCtrl->dealCmd(CTRL_ROD, ATTITUDE_NAME);
+}
+
+// 姿态板yaw方向往角度增大方向摆动
+void operate_joint::on_leftRodLeft_pressed()
+{
+    uint32_t state = ROD_LEFT_ACTIVATE;
+    mCtrl->setParam(ATTITUDE_NAME, SET_ROD_PARAM, &state, sizeof(state));
+    mCtrl->dealCmd(CTRL_ROD, ATTITUDE_NAME);
+}
+
+void operate_joint::on_leftRodLeft_released()
+{
+    uint32_t state = ROD_STATE_NONE;
+    mCtrl->setParam(ATTITUDE_NAME, SET_ROD_PARAM, &state, sizeof(state));
+    mCtrl->dealCmd(CTRL_ROD, ATTITUDE_NAME);
+}
+
+// 姿态板yaw方向往角度减小方向摆动
+void operate_joint::on_leftRodRight_pressed()
+{
+    uint32_t state = ROD_RIGHT_ACTIVATE;
+    mCtrl->setParam(ATTITUDE_NAME, SET_ROD_PARAM, &state, sizeof(state));
+    mCtrl->dealCmd(CTRL_ROD, ATTITUDE_NAME);
+}
+
+void operate_joint::on_leftRodRight_released()
+{
+    uint32_t state = ROD_STATE_NONE;
+    mCtrl->setParam(ATTITUDE_NAME, SET_ROD_PARAM, &state, sizeof(state));
+    mCtrl->dealCmd(CTRL_ROD, ATTITUDE_NAME);
+}
+

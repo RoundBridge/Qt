@@ -131,6 +131,30 @@ private slots:
 
     void on_aCmdInfo_customContextMenuRequested(const QPoint &pos);
 
+    void on_rightRodUp_pressed();
+
+    void on_rightRodUp_released();
+
+    void on_rightRodDown_pressed();
+
+    void on_rightRodDown_released();
+
+    void on_leftRodUp_pressed();
+
+    void on_leftRodUp_released();
+
+    void on_leftRodDown_pressed();
+
+    void on_leftRodDown_released();
+
+    void on_leftRodLeft_pressed();
+
+    void on_leftRodLeft_released();
+
+    void on_leftRodRight_pressed();
+
+    void on_leftRodRight_released();
+
 private:
     Ui::operate_joint *ui;
     QWidget *mParent;

@@ -1344,6 +1344,198 @@
     <string>旋转关节命令信息</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="leftRodAntiClock">
+   <property name="geometry">
+    <rect>
+     <x>1118</x>
+     <y>130</y>
+     <width>32</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>左旋</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="leftRodClock">
+   <property name="geometry">
+    <rect>
+     <x>1152</x>
+     <y>130</y>
+     <width>32</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>右旋</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="leftRodUp">
+   <property name="geometry">
+    <rect>
+     <x>1135</x>
+     <y>90</y>
+     <width>32</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>上</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="leftRodDown">
+   <property name="geometry">
+    <rect>
+     <x>1135</x>
+     <y>170</y>
+     <width>32</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>下</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="leftRodLeft">
+   <property name="geometry">
+    <rect>
+     <x>1080</x>
+     <y>130</y>
+     <width>32</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>左</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="leftRodRight">
+   <property name="geometry">
+    <rect>
+     <x>1190</x>
+     <y>130</y>
+     <width>32</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>右</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="leftRod">
+   <property name="geometry">
+    <rect>
+     <x>1120</x>
+     <y>50</y>
+     <width>69</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>左摇杆</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rightRodUp">
+   <property name="geometry">
+    <rect>
+     <x>1135</x>
+     <y>290</y>
+     <width>32</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>上</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rightRodAntiClock">
+   <property name="geometry">
+    <rect>
+     <x>1118</x>
+     <y>330</y>
+     <width>32</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>左旋</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rightRodLeft">
+   <property name="geometry">
+    <rect>
+     <x>1080</x>
+     <y>330</y>
+     <width>32</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>左</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rightRodRight">
+   <property name="geometry">
+    <rect>
+     <x>1190</x>
+     <y>330</y>
+     <width>32</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>右</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rightRodClock">
+   <property name="geometry">
+    <rect>
+     <x>1152</x>
+     <y>330</y>
+     <width>32</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>右旋</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rightRodDown">
+   <property name="geometry">
+    <rect>
+     <x>1135</x>
+     <y>370</y>
+     <width>32</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>下</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="rightRod">
+   <property name="geometry">
+    <rect>
+     <x>1120</x>
+     <y>250</y>
+     <width>69</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>右摇杆</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>

@@ -26,7 +26,7 @@ Controller::Controller(QObject *parent)
 
     connect(&mQueryTimer, &QTimer::timeout, this, &Controller::query);
     mQueryTimer.setSingleShot(false);
-    mQueryTimer.start(15000);
+    mQueryTimer.start(10000);
 }
 
 bool Controller::setParam(const std::string& end, uint32_t key, void* data, uint32_t dataLen) {

@@ -45,6 +45,9 @@ bool joint::setParam(uint32_t key, void* data, uint32_t dataLen) {
         mPitchAngle = *((float*)data);
         qDebug() << "joint set pitch angle:" << mPitchAngle;
         break;
+    case SET_ROD_PARAM:
+        mRodState = *((uint32_t*)data);
+        break;
     default:
         ret = false;
         break;
@@ -179,6 +182,54 @@ bool joint::stop_pitch() {
     len = makeCmd(CMD_JOINT_PITCH_STOP, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
     if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
         qDebug() << "joint pitch stop executed";
+        ret = true;
+    }
+    return ret;
+}
+
+bool joint::doWorkProc(bool stop) {
+    bool ret = false;
+    float angle = 0;
+    int32_t pat = 0;
+    uint32_t len = 0, cmd = 0;
+    QByteArray out;
+    QJsonObject extra;
+
+    if (stop) {
+        len = makeCmd(CMD_JOINT_PITCH_STOP, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
+        if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+            qDebug() << "joint stop pitch executed";
+            ret = true;
+        }
+        QThread::msleep(20);
+        out.clear();
+        len = makeCmd(CMD_JOINT_ROTATE_STOP, ++mSeq, QD_MESSAGE_TYPE_JSON, out);
+        if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+            qDebug() << "joint stop rotate executed";
+            ret = true;
+        }
+        return ret;
+    }
+
+    switch (mRodState) {
+    case ROD_UP_ACTIVATE:
+        pat = 3; angle = 5; cmd = CMD_JOINT_PITCH;
+        break;
+    case ROD_BOTTOM_ACTIVATE:
+        pat = 3; angle = -5; cmd = CMD_JOINT_PITCH;
+        break;
+    default:
+        return false;
+    }
+
+    extra.insert("pattern", pat);
+    extra.insert("angle", angle);
+    extra.insert("speed", mPitchSpeed); //摆动命令中，speed是每秒度数
+    extra.insert("current", mPitchCurrent);
+
+    len = makeCmd(cmd, ++mSeq, QD_MESSAGE_TYPE_JSON, out, &extra);
+    if (len && mLink->send((uint8_t*)out.data(), (uint32_t)out.size(), mRemoteIp, mRemotePort)) {
+        qDebug() << "joint rod executed";
         ret = true;
     }
     return ret;

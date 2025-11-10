@@ -18,6 +18,7 @@ typedef enum {
     CTRL_RESET          = 5,
     CTRL_PREPARE_STRIP  = 6,
     CTRL_STRIP          = 7,
+    CTRL_ROD            = 8,
 
     CTRL_JOINT_ROTATE       = 21,
     CTRL_JOINT_ROTATE_STOP  = 22,
